@@ -137,6 +137,41 @@
         </div>
       </section>
 
+      <section class="layer-stack" aria-label="系统层次">
+        <p class="eyebrow">Layer model</p>
+        <h2>把路线拆成四层，就能看清楚 Code Agent 负责什么、不负责什么。</h2>
+        <div class="layer-list">
+          <article>
+            <span>01</span>
+            <div>
+              <h3>任务理解层</h3>
+              <p>把语言指令、图像观察和环境状态整理成目标、约束和成功条件。</p>
+            </div>
+          </article>
+          <article>
+            <span>02</span>
+            <div>
+              <h3>策略代码层</h3>
+              <p>生成可读、可审计、可修改的程序，决定什么时候观察、求解、执行或停下。</p>
+            </div>
+          </article>
+          <article>
+            <span>03</span>
+            <div>
+              <h3>动作接口层</h3>
+              <p>把局部目标转换成短动作、路径或控制参数，并暴露失败、碰撞和力反馈。</p>
+            </div>
+          </article>
+          <article>
+            <span>04</span>
+            <div>
+              <h3>执行反馈层</h3>
+              <p>观察执行结果，触发重试、重新观察、换视角或终止。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <article class="idea-article">
         <section id="coding-agent">
           <p class="eyebrow">Observation 01</p>
