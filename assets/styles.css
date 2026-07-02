@@ -282,8 +282,7 @@ h2 {
 }
 
 .notes,
-.reading-path,
-.reader-note {
+.reading-path {
   display: grid;
   grid-template-columns: 0.62fr 1fr;
   gap: 32px;
@@ -322,8 +321,7 @@ h2 {
   background: var(--white);
 }
 
-.term-grid p,
-.reader-note p {
+.term-grid p {
   color: var(--muted);
 }
 
@@ -498,8 +496,7 @@ ol {
   .term-grid,
   .flow-diagram,
   .notes,
-  .reading-path,
-  .reader-note {
+  .reading-path {
     grid-template-columns: 1fr;
   }
 

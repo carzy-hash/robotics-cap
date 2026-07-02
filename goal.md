@@ -61,6 +61,11 @@ Example reader backgrounds:
 
 Write down the assumed reader before deciding improvements.
 
+The reader background is an internal editing lens. Do not publish it as visible
+page content, card copy, headings, or reader-facing notes. It may appear in
+working notes, the final response, or the summary JSONL entry so future
+iterations know what perspective was used.
+
 ### 4. Browse the page as that reader
 
 Walk through the page and supporting pages from that reader's point of view.
@@ -122,6 +127,8 @@ Edit the page and any supporting pages. Keep the repository role in mind:
 - Do not add heavy generated artifacts or branch preview machinery.
 - Keep changes reviewable as page diffs.
 - Put deletion proposals in `to-delete.md` instead of deleting immediately.
+- Do not write the reader lens itself into the published page. Use it to shape
+  the explanation, then remove the scaffolding.
 
 After editing, verify that the page still works as a static GitHub Pages site.
 When layout changes are made, preview desktop and mobile widths.
