@@ -311,6 +311,23 @@
             观测器可以发送中断、补充信息或风险信号；局部代码块负责完成一个特定子动作。
             大量这样的并行流程组合起来，可能让系统同时具备安全性和敏捷性。
           </p>
+          <div class="module-table" aria-label="多模块机器人协作示例">
+            <article>
+              <h3>左手代码块</h3>
+              <p>负责接近、抓取、抬起，只操作左手相关关节和夹爪。</p>
+              <small>输出：抓取动作和局部失败信号</small>
+            </article>
+            <article>
+              <h3>头部观察块</h3>
+              <p>负责持续看场景，发现遮挡、偏移、目标丢失或安全风险。</p>
+              <small>输出：暂停、重试、换视角建议</small>
+            </article>
+            <article>
+              <h3>右手感知块</h3>
+              <p>负责移动手部相机，补盲、确认深度或提供第二视角。</p>
+              <small>输出：补充观测和定位约束</small>
+            </article>
+          </div>
         </section>
 
         <section id="vision-benchmark">

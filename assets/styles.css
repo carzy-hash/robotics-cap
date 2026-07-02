@@ -557,6 +557,35 @@ h2 {
   color: var(--muted);
 }
 
+.module-table {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.module-table article {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.module-table h3 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.module-table p,
+.module-table small {
+  color: var(--muted);
+}
+
+.module-table small {
+  display: block;
+  margin-top: 14px;
+}
+
 .timeline {
   display: grid;
   gap: 16px;
@@ -631,6 +660,7 @@ ol {
   .quick-grid,
   .comparison-row,
   .rhythm-list,
+  .module-table,
   .notes,
   .reading-path {
     grid-template-columns: 1fr;
