@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Robotics CAP | 项目路线与概念手册</title>
+    <meta
+      name="description"
+      content="Robotics CAP 的 GitHub Pages 项目说明框架：路线图入口与概念手册入口。"
+    >
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Robotics CAP 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="roadmap.html">路线图</a>
+        <a href="concepts.html">概念书</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Code-as-Policy inspired robotics project</p>
+          <h1>把机器人能力写成一条可解释、可迭代、可执行的项目路线。</h1>
+          <p class="lead">
+            本站是 Robotics CAP 的项目说明框架。我们先固定两个入口：一个面向路线图，解释阶段、里程碑与交付；
+            一个面向概念和比喻，用更像一本书的方式解释系统为什么这样设计。
+          </p>
+          <div class="hero-actions" aria-label="入口">
+            <a class="button primary" href="roadmap.html">进入路线图</a>
+            <a class="button" href="concepts.html">进入概念书</a>
+          </div>
+        </div>
+
+        <figure class="system-map" aria-label="机器人 CAP 系统示意">
+          <div class="map-stage sense">
+            <span>01</span>
+            <strong>感知</strong>
+            <small>场景、物体、状态</small>
+          </div>
+          <div class="map-stage policy">
+            <span>02</span>
+            <strong>策略代码</strong>
+            <small>任务分解与工具调用</small>
+          </div>
+          <div class="map-stage act">
+            <span>03</span>
+            <strong>执行</strong>
+            <small>抓取、移动、验证</small>
+          </div>
+          <div class="map-stage loop">
+            <span>04</span>
+            <strong>反馈迭代</strong>
+            <small>失败修正与复用</small>
+          </div>
+        </figure>
+      </section>
+
+      <section class="split">
+        <article class="entry-panel">
+          <p class="eyebrow">Direction A</p>
+          <h2>路线图入口</h2>
+          <p>
+            用工程项目的语言说明我们如何从基础原型走向可演示系统：每个阶段做什么、验证什么、
+            需要哪些输入、产出什么成果。
+          </p>
+          <a class="text-link" href="roadmap.html">查看阶段与里程碑</a>
+        </article>
+
+        <article class="entry-panel">
+          <p class="eyebrow">Direction B</p>
+          <h2>概念书入口</h2>
+          <p>
+            用概念、比喻和章节化叙事解释项目思想：机器人像一位可以写计划的执行者，
+            代码像政策，环境反馈像编辑器。
+          </p>
+          <a class="text-link" href="concepts.html">阅读概念与比喻</a>
+        </article>
+      </section>
+
+      <section class="notes">
+        <div>
+          <p class="eyebrow">CAPX baseline</p>
+          <h2>我们从 CAPX 借鉴什么</h2>
+        </div>
+        <p>
+          CAPX 的启发不在于照搬一个页面，而在于采用它的组织方式：把复杂机器人任务拆成可组合原语，
+          通过代码表达策略，通过感知与执行闭环不断修正。本站会把这套思想翻译成项目路线、系统模块和用户能理解的叙事。
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP</span>
+      <span>GitHub Pages framework</span>
+    </footer>
+  </body>
+</html>

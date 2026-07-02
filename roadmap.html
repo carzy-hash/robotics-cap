@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>路线图 | Robotics CAP</title>
+    <meta name="description" content="Robotics CAP 的路线图、阶段、里程碑和交付框架。">
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Robotics CAP 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a class="active" href="roadmap.html">路线图</a>
+        <a href="concepts.html">概念书</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="page-hero compact">
+        <p class="eyebrow">Roadmap</p>
+        <h1>从想法到可演示系统的四段路线。</h1>
+        <p class="lead">
+          这一路线图用于说明项目推进顺序。每一段都对应一个可验证的能力，而不是只列功能清单。
+        </p>
+      </section>
+
+      <section class="timeline" aria-label="项目路线图">
+        <article class="milestone">
+          <div class="milestone-index">01</div>
+          <div>
+            <h2>问题定义与任务场景</h2>
+            <p>
+              明确机器人需要解决的任务边界：物体、场景、约束、成功标准、失败类型，以及面向展示的核心故事线。
+            </p>
+            <ul>
+              <li>输出：任务清单、场景假设、演示脚本草案</li>
+              <li>验证：能否用自然语言描述一项完整任务</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="milestone">
+          <div class="milestone-index">02</div>
+          <div>
+            <h2>原语与策略层</h2>
+            <p>
+              把复杂动作拆成可复用的机器人原语，并建立策略层：感知结果进入策略，策略决定下一步调用哪个原语。
+            </p>
+            <ul>
+              <li>输出：动作原语表、策略接口、任务分解样例</li>
+              <li>验证：同一套原语能否组合出多个任务</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="milestone">
+          <div class="milestone-index">03</div>
+          <div>
+            <h2>闭环执行与失败修正</h2>
+            <p>
+              引入执行反馈：机器人不是一次性“猜完计划”，而是在行动后观察结果，并根据偏差更新策略。
+            </p>
+            <ul>
+              <li>输出：反馈格式、重试策略、失败案例库</li>
+              <li>验证：典型失败能否被识别并进入修正流程</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="milestone">
+          <div class="milestone-index">04</div>
+          <div>
+            <h2>演示系统与公开说明</h2>
+            <p>
+              将技术路线、演示任务、概念解释和项目成果整理成可公开展示的页面、视频或文档。
+            </p>
+            <ul>
+              <li>输出：GitHub Pages、演示视频、最终说明文档</li>
+              <li>验证：外部读者能否在 5 分钟内理解项目价值</li>
+            </ul>
+          </div>
+        </article>
+      </section>
+
+      <section class="framework-grid">
+        <article>
+          <h2>当前需要补充</h2>
+          <p>具体机器人平台、任务环境、传感器输入、动作原语范围、最终展示形式。</p>
+        </article>
+        <article>
+          <h2>页面后续扩展</h2>
+          <p>可加入甘特图、阶段进度、实验记录、里程碑截图、论文/代码/视频链接。</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP</span>
+      <a href="index.html">返回首页</a>
+    </footer>
+  </body>
+</html>
