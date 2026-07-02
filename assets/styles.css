@@ -625,6 +625,34 @@ h2 {
   color: var(--muted);
 }
 
+.signal-ladder {
+  display: grid;
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.signal-ladder article {
+  display: grid;
+  grid-template-columns: 100px 0.75fr 1fr;
+  gap: 16px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.signal-ladder span {
+  color: var(--brick);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.signal-ladder p {
+  color: var(--muted);
+}
+
 .timeline {
   display: grid;
   gap: 16px;
@@ -701,6 +729,7 @@ ol {
   .rhythm-list,
   .module-table,
   .benchmark-grid,
+  .signal-ladder article,
   .notes,
   .reading-path {
     grid-template-columns: 1fr;

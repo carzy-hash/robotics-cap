@@ -393,6 +393,28 @@
             代码也更容易审计。我们可以提前发现那些依赖仿真捷径、会放大 sim-to-real gap 的策略，
             并通过奖励或惩罚机制把它们排除出去。
           </p>
+          <div class="signal-ladder" aria-label="仿真监督信号">
+            <article>
+              <span>Level 1</span>
+              <strong>动作是否成功</strong>
+              <p>最粗粒度的成功或失败。</p>
+            </article>
+            <article>
+              <span>Level 2</span>
+              <strong>中间状态是否合理</strong>
+              <p>是否先观察、再接近、再抓取，而不是跳步。</p>
+            </article>
+            <article>
+              <span>Level 3</span>
+              <strong>约束是否被满足</strong>
+              <p>是否避开碰撞、限制速度、遵守力阈值。</p>
+            </article>
+            <article>
+              <span>Level 4</span>
+              <strong>代码是否可迁移</strong>
+              <p>是否依赖仿真捷径、固定坐标或不可见内部状态。</p>
+            </article>
+          </div>
         </section>
 
         <section id="next">
