@@ -415,6 +415,18 @@ h2 {
   color: rgb(255 253 248 / 78%);
 }
 
+.limits-panel {
+  margin: 0 0 52px;
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.limits-panel p:last-child {
+  color: var(--muted);
+}
+
 .layer-stack {
   margin: 0 0 52px;
 }
