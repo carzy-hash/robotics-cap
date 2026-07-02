@@ -282,7 +282,8 @@ h2 {
 }
 
 .notes,
-.reading-path {
+.reading-path,
+.reader-note {
   display: grid;
   grid-template-columns: 0.62fr 1fr;
   gap: 32px;
@@ -305,6 +306,59 @@ h2 {
 
 .argument-map {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.term-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding: 8px 0 34px;
+}
+
+.term-grid article {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.term-grid p,
+.reader-note p {
+  color: var(--muted);
+}
+
+.flow-diagram {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  padding: 8px 0 44px;
+}
+
+.flow-step {
+  min-height: 138px;
+  padding: 18px;
+  border-radius: 8px;
+  background: var(--coal);
+  color: var(--white);
+}
+
+.flow-step span {
+  display: block;
+  margin-bottom: 28px;
+  color: rgb(255 253 248 / 68%);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.flow-step strong {
+  display: block;
+  line-height: 1.24;
+}
+
+.flow-arrow {
+  display: none;
 }
 
 .argument-map article {
@@ -347,6 +401,29 @@ h2 {
 
 .idea-links {
   padding-left: 1.3rem;
+}
+
+.code-example {
+  margin: 28px 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.code-example pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 18px;
+  border-radius: 8px;
+  background: #202322;
+  color: var(--white);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.code-example code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
 .timeline {
@@ -418,8 +495,11 @@ ol {
   .chapters,
   .portal-grid,
   .argument-map,
+  .term-grid,
+  .flow-diagram,
   .notes,
-  .reading-path {
+  .reading-path,
+  .reader-note {
     grid-template-columns: 1fr;
   }
 

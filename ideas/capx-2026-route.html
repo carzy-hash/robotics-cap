@@ -68,6 +68,68 @@
         </article>
       </section>
 
+      <section class="reader-note" aria-label="本轮读者视角">
+        <div>
+          <p class="eyebrow">Reader lens</p>
+          <h2>这版先服务一种读者：懂 Code Agent，但不熟机器人控制的 AI 工程师。</h2>
+        </div>
+        <p>
+          对这个读者来说，最容易卡住的地方不是“为什么代码有用”，而是“代码如何接到身体上”。
+          因此这篇文章先把机器人路线拆成三个层次：模型写策略代码，策略代码调用受约束的动作接口，
+          执行后再由观察和仿真反馈修正策略。
+        </p>
+      </section>
+
+      <section class="term-grid" aria-label="关键术语">
+        <article>
+          <h2>策略代码</h2>
+          <p>
+            模型输出的不是最终动作，而是一段带有目标、约束、检查点和恢复逻辑的程序。
+            它像一个可以被审计和修改的任务计划。
+          </p>
+        </article>
+        <article>
+          <h2>Action Chunk</h2>
+          <p>
+            一小段可执行动作序列。它可以直接由模型输出，也可以由策略代码在局部约束下生成。
+          </p>
+        </article>
+        <article>
+          <h2>视觉伺服</h2>
+          <p>
+            机器人持续观察画面，根据当前误差调整动作。这里关心的是模型能否把观察转成可靠的位移、
+            旋转和视角选择。
+          </p>
+        </article>
+      </section>
+
+      <section class="flow-diagram" aria-label="策略代码到动作的流程">
+        <div class="flow-step">
+          <span>Input</span>
+          <strong>任务 + 图像 + 状态</strong>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span>Reason</span>
+          <strong>生成策略代码</strong>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span>Solve</span>
+          <strong>求解局部动作</strong>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span>Act</span>
+          <strong>执行 Action Chunk</strong>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span>Check</span>
+          <strong>观察反馈并修正</strong>
+        </div>
+      </section>
+
       <article class="idea-article">
         <section id="coding-agent">
           <p class="eyebrow">Observation 01</p>
@@ -102,6 +164,32 @@
           </p>
           <p>
             换句话说，Action Chunk 不必消失。它可以从最终答案变成策略代码的产物。
+          </p>
+          <div class="code-example" aria-label="策略代码伪代码示例">
+            <p class="eyebrow">Sketch</p>
+            <pre><code>def pick_object(task, vision, left_arm):
+    target = vision.find(task.object_name)
+    if not target.visible:
+        return ask_head_camera_to_reframe(target_hint=task.object_name)
+
+    plan = left_arm.solve_path(
+        start=left_arm.pose,
+        goal=target.grasp_pose,
+        constraints=[
+            keep_wrist_level(),
+            avoid_table_surface(),
+            stop_if_force_spikes(),
+        ],
+    )
+
+    chunk = plan.to_action_chunk(duration="short")
+    result = left_arm.execute(chunk)
+    return verify_or_replan(result, vision)</code></pre>
+          </div>
+          <p>
+            这段伪代码不是实现方案，而是说明接口形状：模型可以先生成可读策略，
+            再让专门的运动求解器或控制模块生成短动作。这样 review 的对象就不只是轨迹本身，
+            还包括目标是否正确、约束是否合理、失败时是否知道停下。
           </p>
         </section>
 
