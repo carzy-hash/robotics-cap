@@ -427,6 +427,33 @@ h2 {
   color: var(--muted);
 }
 
+.prereq-grid {
+  margin: 0 0 52px;
+}
+
+.prereq-grid > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.prereq-grid article {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.prereq-grid strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.prereq-grid p {
+  color: var(--muted);
+}
+
 .layer-stack {
   margin: 0 0 52px;
 }
@@ -775,6 +802,7 @@ ol {
   .term-grid,
   .flow-diagram,
   .quick-grid,
+  .prereq-grid > div,
   .comparison-row,
   .rhythm-list,
   .module-table,
