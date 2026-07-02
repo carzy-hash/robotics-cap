@@ -328,6 +328,18 @@
               <small>输出：补充观测和定位约束</small>
             </article>
           </div>
+          <div class="signal-strip" aria-label="模块通信信号">
+            <span>pause</span>
+            <span>retry</span>
+            <span>reframe</span>
+            <span>confirm</span>
+            <span>abort</span>
+          </div>
+          <p>
+            这些信号不需要复杂。重要的是让每个局部代码块知道自己什么时候应该继续，
+            什么时候应该让出控制权，什么时候必须停止。这样并行不是“各动各的”，
+            而是通过少量清楚的事件形成协作。
+          </p>
         </section>
 
         <section id="vision-benchmark">

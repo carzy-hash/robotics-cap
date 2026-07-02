@@ -586,6 +586,22 @@ h2 {
   margin-top: 14px;
 }
 
+.signal-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.signal-strip span {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--coal);
+  color: var(--white);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+}
+
 .timeline {
   display: grid;
   gap: 16px;
