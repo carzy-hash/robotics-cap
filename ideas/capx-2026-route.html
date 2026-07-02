@@ -190,6 +190,28 @@
             思考很久、模拟候选动作、检查风险，再执行一个相对短的动作片段。对这类任务来说，
             Code Agent 或 Code Model 的长时间推理不是额外负担，而是安全性的一部分。
           </p>
+          <div class="rhythm-list" aria-label="安全场景中的执行节奏">
+            <article>
+              <strong>观察</strong>
+              <p>先从多视角确认目标、遮挡、可达性和危险区域。</p>
+            </article>
+            <article>
+              <strong>计划</strong>
+              <p>生成带约束的策略代码，而不是立即移动每个关节。</p>
+            </article>
+            <article>
+              <strong>检查</strong>
+              <p>在执行前审计目标、碰撞、力阈值和失败退出条件。</p>
+            </article>
+            <article>
+              <strong>短执行</strong>
+              <p>只执行一小段 Action Chunk，让风险停留在可回滚范围内。</p>
+            </article>
+            <article>
+              <strong>复核</strong>
+              <p>重新观察结果，再决定继续、重试、换视角或停止。</p>
+            </article>
+          </div>
         </section>
 
         <section id="action-chunk">

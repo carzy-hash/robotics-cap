@@ -534,6 +534,29 @@ h2 {
   background: #f0eee6;
 }
 
+.rhythm-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.rhythm-list article {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.rhythm-list strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.rhythm-list p {
+  color: var(--muted);
+}
+
 .timeline {
   display: grid;
   gap: 16px;
@@ -607,6 +630,7 @@ ol {
   .flow-diagram,
   .quick-grid,
   .comparison-row,
+  .rhythm-list,
   .notes,
   .reading-path {
     grid-template-columns: 1fr;
