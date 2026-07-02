@@ -137,6 +137,18 @@
         </div>
       </section>
 
+      <section class="audit-checklist" aria-label="策略代码审计清单">
+        <p class="eyebrow">Audit checklist</p>
+        <h2>如果机器人输出的是策略代码，我们可以在执行前先问这些问题。</h2>
+        <ul>
+          <li>目标是否明确到物体、姿态、位置和完成条件？</li>
+          <li>代码是否写出了观察不足时的处理方式？</li>
+          <li>是否有碰撞、速度、力、距离或 workspace 边界约束？</li>
+          <li>执行失败后是重试、换视角、降级，还是停止？</li>
+          <li>有没有依赖仿真内部状态或固定轨迹的可疑 shortcut？</li>
+        </ul>
+      </section>
+
       <section class="layer-stack" aria-label="系统层次">
         <p class="eyebrow">Layer model</p>
         <h2>把路线拆成四层，就能看清楚 Code Agent 负责什么、不负责什么。</h2>

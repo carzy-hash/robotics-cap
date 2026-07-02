@@ -393,6 +393,28 @@ h2 {
   color: var(--muted);
 }
 
+.audit-checklist {
+  margin: 0 0 52px;
+  padding: clamp(24px, 5vw, 42px);
+  border-radius: 8px;
+  background: var(--coal);
+  color: var(--white);
+}
+
+.audit-checklist h2 {
+  max-width: 840px;
+}
+
+.audit-checklist ul {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.audit-checklist li {
+  color: rgb(255 253 248 / 78%);
+}
+
 .layer-stack {
   margin: 0 0 52px;
 }
