@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CapX 路线为什么适合 2026 | 想法库</title>
+    <meta
+      name="description"
+      content="Robotics CAP 想法条目：为什么 CapX 式策略代码可能是 2026 年最值得押注的机器人路线。"
+    >
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../roadmap.html">路线图</a>
+        <a href="../concepts.html">概念书</a>
+        <a class="active" href="./">想法库</a>
+        <a href="../previews/">预览</a>
+        <a href="../proposals/">提案</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="page-hero compact idea-hero">
+        <p class="eyebrow">Idea 01</p>
+        <h1>为什么 CapX 式策略代码会是 2026 年最好的机器人路线？</h1>
+        <p class="lead">
+          核心判断：Coding 是目前最能释放模型智能的输出维度之一。机器人也可以借这条路线，
+          让模型生成可审计、可组合、可监督的策略代码，再由代码生成动作，而不是只直接输出 Action Chunk。
+        </p>
+      </section>
+
+      <section class="argument-map" aria-label="论点地图">
+        <article>
+          <span>01</span>
+          <strong>借 Code Agent 的东风</strong>
+          <p>把模型最强的规划、分解、工具调用和纠错能力放到机器人策略里。</p>
+        </article>
+        <article>
+          <span>02</span>
+          <strong>安全任务允许长思考</strong>
+          <p>很多机器人任务不是极速反应场景，可以先观察、推演和检查很久。</p>
+        </article>
+        <article>
+          <span>03</span>
+          <strong>重新理解 Action Chunk</strong>
+          <p>动作片段不是路线终点，而是策略代码生成出来的控制产物。</p>
+        </article>
+        <article>
+          <span>04</span>
+          <strong>并行控制机器模块</strong>
+          <p>左手、右手、头部和相机可以由不同代码序列协作控制。</p>
+        </article>
+        <article>
+          <span>05</span>
+          <strong>测量视觉伺服能力</strong>
+          <p>专门评估平移、旋转、遮挡、侧面到达和视角补偿。</p>
+        </article>
+        <article>
+          <span>06</span>
+          <strong>让仿真监督更丰富</strong>
+          <p>监督代码、约束、中间状态和动作生成过程，而不只监督动作序列。</p>
+        </article>
+      </section>
+
+      <article class="idea-article">
+        <section id="coding-agent">
+          <p class="eyebrow">Observation 01</p>
+          <h2>Agent Coding 展示了非常强的智力释放路径</h2>
+          <p>
+            Agent Coding 的重要性不只是“模型会写代码”。它展示的是模型在规划、任务分解、工具调用、
+            错误检查和迭代修正上的综合能力。很多问题一旦被转译到 coding 维度，模型就能释放更强的结构化智能。
+          </p>
+          <p>
+            Robotics CAP 的判断是：操作机器也是同一件事。与其让机器人模型直接输出一段动作，
+            不如让它生成操作机器人的代码。代码可以表达目标、约束、循环、条件、检查点和恢复策略，
+            也更容易被人和系统审计。
+          </p>
+          <p>
+            另一个现实条件也让这条路线变得可承受：很多机器人任务是安全场景。机器人可以先观察很久、
+            思考很久、模拟候选动作、检查风险，再执行一个相对短的动作片段。对这类任务来说，
+            Code Agent 或 Code Model 的长时间推理不是额外负担，而是安全性的一部分。
+          </p>
+        </section>
+
+        <section id="action-chunk">
+          <p class="eyebrow">Observation 02</p>
+          <h2>Action Chunk 可以被看作 API 很有限的 Code Agent</h2>
+          <p>
+            当前很多机器人范式接近视觉伺服：机器人观察当前图像，接收语言指令，然后输出一段动作。
+            输入通常来自头部相机、可选的手部相机和语言任务，输出则是 Action Chunk。
+          </p>
+          <p>
+            这个范式有价值，但表达接口很窄。我们既可以让模型输出单步动作，也可以让模型输出一段
+            “生成动作的代码”。例如，给定末端执行器的起点、终点和约束，让代码求解路径；
+            或者让代码生成多条候选路线，再根据观察结果选择更合适的 Action Chunk。
+          </p>
+          <p>
+            换句话说，Action Chunk 不必消失。它可以从最终答案变成策略代码的产物。
+          </p>
+        </section>
+
+        <section id="parallel-modules">
+          <p class="eyebrow">Observation 03</p>
+          <h2>并行代码序列可以支持多模块机器人迁移</h2>
+          <p>
+            Code Agent 的优势之一是并行和模块化。对于一个包含左手、右手和头部的机器人，
+            可以让不同代码序列分别负责不同机器模块，而不是要求一个模型输出一整块混合动作。
+          </p>
+          <p>
+            左手可以有自己的抓取流程：观察物体、靠近、夹取、抬起。这个代码序列只操作左手相关的关节。
+            头部代码可以持续观察场景，发现遮挡、偏移或风险时向左手代码发送事件，让它暂停、重试或调整策略。
+          </p>
+          <p>
+            右手也可以成为主动感知模块。如果右手带相机，它可以调整视角，朝向左手正在操作的物体，
+            提供补盲、三角定位或细节确认。代码在这里不只是控制动作，也是约束不同模块之间的协作关系。
+          </p>
+          <p>
+            人类学习技能时也不总是在每个时刻精细控制每一个关节。以网球为例，初学者常被要求保持上身
+            和手部姿态相对固定，通过脚步移动去迎击；发球时，教练甚至会要求更固定的手势，
+            让身体在一个可重复的姿态里完成动作。很多人学会一项运动，并不是因为能连续精控所有关节，
+            而是掌握了一组稳定姿态、关节组合和触发时机。
+          </p>
+          <p>
+            机器人测试场景里也经常出现类似结构：某些关节子集保持姿态，另一些关节子集负责接近、
+            对齐或执行。策略代码可以显式表达这些“固定、等待、触发、释放”的结构，
+            而不是把所有自由度都压进同一个连续动作输出。
+          </p>
+          <p>
+            这里还有一个有用的类比：章鱼的不同触手可以有局部神经中枢，许多控制不必全部回到单一大脑。
+            Robotics CAP 想象的最终系统也可以这样工作：一个关节子集的执行器，挂载多个不同用途的观测器；
+            观测器可以发送中断、补充信息或风险信号；局部代码块负责完成一个特定子动作。
+            大量这样的并行流程组合起来，可能让系统同时具备安全性和敏捷性。
+          </p>
+        </section>
+
+        <section id="vision-benchmark">
+          <p class="eyebrow">Observation 04</p>
+          <h2>视觉伺服能力仍需要被专门测量</h2>
+          <p>
+            这条路线依赖一个基线能力：视觉输入模型能够可靠理解画面，并把视觉元素处理到接近语言模型
+            处理文本的水平。但以当前公开多模态模型的表现看，这个能力还没有完全到位。
+          </p>
+          <p>
+            在一些测试里，强多模态模型对物体在画面中的平面位置有比较明确的感知。它能推理出应该向哪个方向
+            平移，让物体更居中或完整出现在画面中。但当任务变成“通过旋转到达物体的特定侧面或角度”时，
+            表现可能更接近随机游走。
+          </p>
+          <p>
+            因此需要专门设计视觉伺服 benchmark：不只看识别物体，也要看模型是否能把观察转换成平移、
+            旋转、视角选择、遮挡处理和失败恢复。
+          </p>
+        </section>
+
+        <section id="simulation">
+          <p class="eyebrow">Observation 05</p>
+          <h2>代码生成让仿真监督比直接动作输出更丰富</h2>
+          <p>
+            如果模型能够在仿真环境中训练或强化学习，策略代码提供的监督信号会比直接 Action Chunk 更多。
+            监督对象可以是下一步动作，也可以是整个 trial 的动作生成过程、约束表达、中间状态和失败恢复逻辑。
+          </p>
+          <p>
+            这对 sim-to-real gap 很重要。代码可以很短，并且不鼓励模型在没有必要时直接记住动作序列。
+            它更像是在学习一个可解释的求解过程，而不是过拟合某个仿真场景里的固定动作。
+          </p>
+          <p>
+            代码也更容易审计。我们可以提前发现那些依赖仿真捷径、会放大 sim-to-real gap 的策略，
+            并通过奖励或惩罚机制把它们排除出去。
+          </p>
+        </section>
+
+        <section id="next">
+          <p class="eyebrow">Next split</p>
+          <h2>下一步应该拆出的独立想法</h2>
+          <ul class="idea-links">
+            <li>Action Chunk 作为窄 API Code Agent 的形式化定义。</li>
+            <li>安全场景下长思考、长观察和短动作执行之间的调度策略。</li>
+            <li>技能学习里的固定姿态、关节子集和触发时机如何映射到机器人策略代码。</li>
+            <li>视觉伺服 benchmark：平移、旋转、遮挡和多视角任务集。</li>
+            <li>多模块机器人中的并行代码序列和事件协议。</li>
+            <li>仿真环境里如何奖励短代码、可审计约束和可迁移动作生成。</li>
+          </ul>
+        </section>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP</span>
+      <a href="./">返回想法库</a>
+    </footer>
+  </body>
+</html>

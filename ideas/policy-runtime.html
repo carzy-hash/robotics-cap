@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Policy Runtime | 想法库</title>
+    <meta name="description" content="Robotics CAP 策略运行时概念条目。">
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../roadmap.html">路线图</a>
+        <a href="../concepts.html">概念书</a>
+        <a class="active" href="./">想法库</a>
+        <a href="../previews/">预览</a>
+        <a href="../proposals/">提案</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="page-hero compact">
+        <p class="eyebrow">Idea entry</p>
+        <h1>Policy Runtime 让策略不只是文本，而是可被执行和修正的流程。</h1>
+        <p class="lead">
+          这个条目用于解释策略层如何接收任务、调用原语、读取反馈，并把失败经验转化成下一次动作。
+        </p>
+      </section>
+
+      <section class="timeline" aria-label="策略运行时流程">
+        <article class="milestone">
+          <div class="milestone-index">01</div>
+          <div>
+            <h2>任务进入</h2>
+            <p>自然语言任务被整理成目标、约束和可验证的完成条件。</p>
+          </div>
+        </article>
+        <article class="milestone">
+          <div class="milestone-index">02</div>
+          <div>
+            <h2>策略生成</h2>
+            <p>系统选择动作原语，形成可执行的策略序列。</p>
+          </div>
+        </article>
+        <article class="milestone">
+          <div class="milestone-index">03</div>
+          <div>
+            <h2>反馈修正</h2>
+            <p>执行结果回到策略层，触发重试、改写或终止。</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP</span>
+      <a href="./">返回想法库</a>
+    </footer>
+  </body>
+</html>

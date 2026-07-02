@@ -69,6 +69,7 @@ a {
 
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -231,7 +232,9 @@ h2 {
 
 .split,
 .framework-grid,
-.chapters {
+.chapters,
+.portal-grid,
+.argument-map {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
@@ -240,7 +243,9 @@ h2 {
 
 .entry-panel,
 .framework-grid article,
-.chapters article {
+.chapters article,
+.portal-grid article,
+.argument-map article {
   min-height: 250px;
   padding: clamp(22px, 4vw, 34px);
   border: 1px solid var(--line);
@@ -251,10 +256,14 @@ h2 {
 .entry-panel p,
 .framework-grid p,
 .chapters p,
+.portal-grid p,
 .notes p,
 .reading-path li,
 .milestone p,
-.milestone li {
+.milestone li,
+.argument-map p,
+.idea-article p,
+.idea-article li {
   color: var(--muted);
 }
 
@@ -263,6 +272,13 @@ h2 {
   margin-top: 18px;
   color: var(--brick);
   font-weight: 780;
+}
+
+.inline-link {
+  color: var(--brick);
+  font-weight: 760;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .notes,
@@ -282,8 +298,55 @@ h2 {
 }
 
 .page-hero.compact h1,
-.page-hero.book h1 {
+.page-hero.book h1,
+.idea-hero h1 {
   max-width: 940px;
+}
+
+.argument-map {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.argument-map article {
+  min-height: 220px;
+}
+
+.argument-map span {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background: var(--coal);
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.argument-map strong {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.idea-article {
+  max-width: 900px;
+  margin: 20px auto 80px;
+}
+
+.idea-article section {
+  padding: 42px 0;
+  border-top: 1px solid var(--line);
+}
+
+.idea-article h2 {
+  max-width: 760px;
+}
+
+.idea-links {
+  padding-left: 1.3rem;
 }
 
 .timeline {
@@ -353,6 +416,8 @@ ol {
   .split,
   .framework-grid,
   .chapters,
+  .portal-grid,
+  .argument-map,
   .notes,
   .reading-path {
     grid-template-columns: 1fr;

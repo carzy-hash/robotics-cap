@@ -17,7 +17,7 @@ if ! git remote get-url "$REMOTE_NAME" >/dev/null 2>&1; then
   exit 1
 fi
 
-git add README.md index.html roadmap.html concepts.html assets .nojekyll scripts/publish.sh
+git add README.md index.html roadmap.html concepts.html assets docs ideas previews proposals .nojekyll scripts/publish.sh scripts/review.sh
 
 if git diff --cached --quiet; then
   echo "No staged changes. Pushing current '$TARGET_BRANCH' state."
