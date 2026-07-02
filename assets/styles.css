@@ -602,6 +602,29 @@ h2 {
   font-size: 0.9rem;
 }
 
+.benchmark-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0;
+}
+
+.benchmark-grid article {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.benchmark-grid strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.benchmark-grid p {
+  color: var(--muted);
+}
+
 .timeline {
   display: grid;
   gap: 16px;
@@ -677,6 +700,7 @@ ol {
   .comparison-row,
   .rhythm-list,
   .module-table,
+  .benchmark-grid,
   .notes,
   .reading-path {
     grid-template-columns: 1fr;

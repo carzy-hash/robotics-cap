@@ -358,6 +358,24 @@
             因此需要专门设计视觉伺服 benchmark：不只看识别物体，也要看模型是否能把观察转换成平移、
             旋转、视角选择、遮挡处理和失败恢复。
           </p>
+          <div class="benchmark-grid" aria-label="视觉伺服 benchmark 任务">
+            <article>
+              <strong>平移居中</strong>
+              <p>目标偏在画面边缘时，判断应该往哪个方向移动相机或末端。</p>
+            </article>
+            <article>
+              <strong>旋转到侧面</strong>
+              <p>目标需要从特定侧面接近时，判断应该绕哪个轴旋转。</p>
+            </article>
+            <article>
+              <strong>遮挡恢复</strong>
+              <p>目标被遮挡时，选择换视角、请求补充相机或停止。</p>
+            </article>
+            <article>
+              <strong>多视角一致</strong>
+              <p>合并头部相机和手部相机信息，避免只相信单一画面。</p>
+            </article>
+          </div>
         </section>
 
         <section id="simulation">
