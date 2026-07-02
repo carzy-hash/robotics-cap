@@ -233,6 +233,28 @@
             再让专门的运动求解器或控制模块生成短动作。这样 review 的对象就不只是轨迹本身，
             还包括目标是否正确、约束是否合理、失败时是否知道停下。
           </p>
+          <div class="comparison-table" aria-label="Action Chunk 路线对照">
+            <div class="comparison-row header">
+              <span>问题</span>
+              <span>直接输出 Action Chunk</span>
+              <span>策略代码生成 Action Chunk</span>
+            </div>
+            <div class="comparison-row">
+              <span>可解释性</span>
+              <span>主要看轨迹结果，难知道模型为什么这样动。</span>
+              <span>可以检查目标、约束、分支、停止条件和重试逻辑。</span>
+            </div>
+            <div class="comparison-row">
+              <span>可监督性</span>
+              <span>监督信号集中在动作是否成功。</span>
+              <span>可以监督计划、代码长度、中间状态和失败处理。</span>
+            </div>
+            <div class="comparison-row">
+              <span>迁移性</span>
+              <span>容易绑定到某个机器人或某段轨迹分布。</span>
+              <span>更容易替换底层接口，把同一策略接到不同硬件。</span>
+            </div>
+          </div>
         </section>
 
         <section id="parallel-modules">

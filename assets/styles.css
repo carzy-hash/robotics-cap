@@ -502,6 +502,38 @@ h2 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
+.comparison-table {
+  display: grid;
+  gap: 1px;
+  margin: 28px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 0.7fr 1fr 1fr;
+  gap: 1px;
+}
+
+.comparison-row span {
+  padding: 16px;
+  background: var(--white);
+  color: var(--muted);
+}
+
+.comparison-row span:first-child,
+.comparison-row.header span {
+  color: var(--ink);
+  font-weight: 780;
+}
+
+.comparison-row.header span {
+  background: #f0eee6;
+}
+
 .timeline {
   display: grid;
   gap: 16px;
@@ -574,6 +606,7 @@ ol {
   .term-grid,
   .flow-diagram,
   .quick-grid,
+  .comparison-row,
   .notes,
   .reading-path {
     grid-template-columns: 1fr;
