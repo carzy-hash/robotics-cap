@@ -8,7 +8,7 @@ deployment system.
 
 The repository should act as a lightweight project portal:
 
-- list ideas, proposals, concepts, and project directions
+- list ideas, concepts, project directions, and curated preview entries
 - organize public-facing or shareable explanations
 - provide stable entry points for people who want to preview or contribute
 - link to implementation repositories, demos, documents, and discussions
@@ -58,11 +58,6 @@ ideas/
 
 previews/
   index.html              Curated preview index
-  public/
-    index.html            Public preview collection
-
-proposals/
-  index.html              Contribution and proposal entry
 
 assets/
 ```
