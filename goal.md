@@ -39,9 +39,8 @@ Read the current target page from top to bottom. Also read nearby entry points
 that affect the reader journey:
 
 - the idea index
-- the concept book
-- the roadmap
-- any relevant preview or proposal page
+- the blog home page
+- the full outline, if the iteration changes the main article structure
 
 While reading, note the current argument structure, unexplained terms, missing
 transitions, weak examples, and places where a reader may lose the thread.
@@ -139,3 +138,22 @@ Iterate CapX route idea for reader clarity
 
 This final commit is required so the next iteration can start from a clean
 baseline instead of cleaning up the previous one.
+
+### 9. Open the preview as the default final state
+
+After all work is complete, make the preview visible by default.
+
+Default behavior:
+
+- Start or reuse the local preview service.
+- Open the blog preview in the browser.
+- Use the GitHub Pages-shaped path:
+
+```text
+http://127.0.0.1:4000/robotics-cap/
+```
+
+- If the default port is busy, use the next available local port and report the
+  exact preview URL.
+- Leave the user with the page open after the final commit, so the completed
+  work can be reviewed visually.
