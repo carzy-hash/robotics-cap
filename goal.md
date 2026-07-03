@@ -7,9 +7,8 @@ especially `ideas/capx-2026-route.html`.
 ## Default Target
 
 - Primary page: `ideas/capx-2026-route.html`
-- Supporting pages: `ideas/index.html`, `concepts.html`, `roadmap.html`
+- Supporting pages: `ideas/index.html`, `index.html`
 - Summary log: `docs/iteration-summary.jsonl`
-- Deletion queue: `to-delete.md`
 
 ## Workflow
 
@@ -93,47 +92,23 @@ response. Group them by importance:
 - Should do: changes that noticeably improve comfort or flow
 - Later: good ideas that deserve their own future iteration
 
-### 6. Move deletion and cleanup proposals to `to-delete.md`
-
-If a candidate improvement involves deletion or cleanup, do not perform it
-inside the normal iteration by default. Instead, add it to `to-delete.md` for
-human confirmation.
-
-This includes:
-
-- deleting pages, sections, assets, scripts, or directories
-- removing links or navigation entries
-- merging two pages into one
-- renaming paths that could break existing links
-- clearing old preview, proposal, or idea entries
-- simplifying structure by removing placeholder content
-
-For each proposal, record:
-
-- what should be deleted or cleaned up
-- where it lives
-- why it appears safe or useful to remove
-- what could break if removed
-- whether there is a suggested replacement or redirect
-
-Do not execute the deletion until a human explicitly confirms the cleanup.
-
-### 7. Complete the chosen non-deletion improvements one by one
+### 6. Complete the chosen improvements one by one
 
 Edit the page and any supporting pages. Keep the repository role in mind:
 
-- This site is an idea portal, not an implementation repo.
+- This site is a focused idea blog, not an implementation repo.
 - Prefer clear explanation, diagrams, examples, and curated links.
 - Do not add heavy generated artifacts or branch preview machinery.
 - Keep changes reviewable as page diffs.
-- Put deletion proposals in `to-delete.md` instead of deleting immediately.
+- Delete obsolete pages, sections, assets, links, or directories directly when
+  removing them makes the reading path clearer.
 - Do not write the reader lens itself into the published page. Use it to shape
   the explanation, then remove the scaffolding.
 
 After editing, verify that the page still works as a static GitHub Pages site.
 When layout changes are made, preview desktop and mobile widths.
 
-### 8. Append a summary JSONL entry
+### 7. Append a summary JSONL entry
 
 Append one JSON object per iteration to `docs/iteration-summary.jsonl`.
 
@@ -146,7 +121,7 @@ Required fields:
 Use one line per iteration. Do not rewrite older entries unless correcting a
 mistake.
 
-### 9. Commit the completed iteration
+### 8. Commit the completed iteration
 
 End the iteration by committing the completed changes.
 

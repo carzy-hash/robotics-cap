@@ -3,99 +3,54 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>想法库 | Robotics CAP</title>
-    <meta name="description" content="Robotics CAP 的公开想法、概念条目和项目方向索引。">
+    <title>Articles | Robotics CAP TechBlog</title>
+    <meta name="description" content="Robotics CAP TechBlog 的文章索引。">
     <link rel="stylesheet" href="../assets/styles.css">
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="../index.html" aria-label="Robotics CAP 首页">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
         <span class="brand-mark">CAP</span>
-        <span>Robotics CAP</span>
+        <span>Robotics CAP TechBlog</span>
       </a>
       <nav class="nav" aria-label="主导航">
-        <a href="../roadmap.html">路线图</a>
-        <a href="../concepts.html">概念书</a>
-        <a class="active" href="./">想法库</a>
-        <a href="../previews/">预览</a>
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
       </nav>
     </header>
 
-    <main>
-      <section class="page-hero compact">
-        <p class="eyebrow">Ideas</p>
-        <h1>按主题整理，而不是按分支复制。</h1>
+    <main class="blog-home">
+      <section class="latest" aria-label="Articles">
+        <p class="publication-kicker">Articles</p>
+        <h1>Robotics CAP 的第一篇主文。</h1>
         <p class="lead">
-          想法库用于承载可公开分享的概念、方向和项目解释。每个条目都应该能被单独阅读，
-          并能链接到路线图、预览或外部实现。
+          当前博客只保留一个阅读中心：CapX 式策略代码路线。其它旧栏目和拆分页已经移出公开路径，
+          后续只有在主文需要真正分篇时再新增文章。
         </p>
-      </section>
 
-      <section class="portal-grid" aria-label="想法条目">
-        <article>
-          <p class="eyebrow">Route thesis</p>
-          <h2>CapX 路线为什么适合 2026</h2>
-          <p>
-            总论：把 Agent Coding 的智力释放迁移到机器人控制，让模型生成策略代码，
-            再由代码生成可审计、可监督的动作。
-          </p>
-          <a class="text-link" href="capx-2026-route.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Core idea</p>
-          <h2>Robotics CAP</h2>
-          <p>项目总概念：把机器人任务组织成可解释、可组合、可迭代的策略系统。</p>
-          <a class="text-link" href="robotics-cap.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Runtime</p>
-          <h2>Policy Runtime</h2>
-          <p>策略运行时的想法：自然语言任务、代码策略、动作原语和反馈循环如何衔接。</p>
-          <a class="text-link" href="policy-runtime.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Control interface</p>
-          <h2>Action Chunk 作为窄 API Code Agent</h2>
-          <p>解释为什么动作片段可以从最终答案变成策略代码的受约束产物。</p>
-          <a class="text-link" href="action-chunk-as-code-agent.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Benchmark</p>
-          <h2>视觉伺服 Benchmark</h2>
-          <p>把视觉模型是否能指导平移、旋转、换视角和失败恢复测出来。</p>
-          <a class="text-link" href="visual-servo-benchmark.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Robot migration</p>
-          <h2>并行模块控制</h2>
-          <p>把左手、右手、头部和相机拆成可以协作的局部代码块。</p>
-          <a class="text-link" href="parallel-module-control.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Training signal</p>
-          <h2>仿真监督与策略代码</h2>
-          <p>解释为什么监督代码、约束和中间状态可能减轻 sim-to-real 风险。</p>
-          <a class="text-link" href="simulation-supervision.html">阅读条目</a>
-        </article>
-
-        <article>
-          <p class="eyebrow">Next slots</p>
-          <h2>待补充方向</h2>
-          <p>任务场景、机器人平台、数据记录、演示叙事和评估方式都可以继续拆成独立想法条目。</p>
-          <a class="text-link" href="capx-2026-route.html#next">查看下一步拆分</a>
-        </article>
+        <div class="post-list">
+          <article class="post-row">
+            <time datetime="2026-07-03">Jul 3, 2026</time>
+            <div>
+              <h2>
+                <a href="capx-2026-route.html">
+                  为什么 CapX 式策略代码会是 2026 年最值得押注的机器人路线
+                </a>
+              </h2>
+              <p>
+                一篇完整介绍：为什么把 Agent Coding 接到机器人任务中间层，可能比直接输出长动作序列更适合
+                2026 年的机器人路线选择。
+              </p>
+              <a class="text-link" href="capx-2026-route.html">Read article</a>
+            </div>
+          </article>
+        </div>
       </section>
     </main>
 
     <footer class="footer">
-      <span>Robotics CAP</span>
-      <a href="../index.html">返回首页</a>
+      <span>Robotics CAP TechBlog</span>
+      <a href="../index.html">Home</a>
     </footer>
   </body>
 </html>

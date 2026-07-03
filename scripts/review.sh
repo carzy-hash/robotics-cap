@@ -9,8 +9,8 @@ SITE_ROOT="$PREVIEW_ROOT/$REPO_NAME"
 rm -rf "$PREVIEW_ROOT"
 mkdir -p "$SITE_ROOT"
 
-cp README.md index.html roadmap.html concepts.html .nojekyll "$SITE_ROOT/"
-cp -R assets docs ideas previews "$SITE_ROOT/"
+cp README.md index.html .nojekyll "$SITE_ROOT/"
+cp -R assets docs ideas "$SITE_ROOT/"
 
 echo "Previewing the GitHub Pages site locally:"
 echo "  http://127.0.0.1:$PORT/$REPO_NAME/"

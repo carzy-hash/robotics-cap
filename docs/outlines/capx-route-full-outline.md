@@ -563,9 +563,8 @@ But reorder them around the story, instead of leaving them as accumulated blocks
 
 ## Likely Deletions or Moves
 
-Do not delete now. If the rewrite makes these obsolete, add proposals to
-`to-delete.md` first:
+If the rewrite makes old structure obsolete, remove it directly:
 
 - duplicated short cards that repeat a paragraph immediately below;
-- standalone idea pages if they become too thin after the main page absorbs them;
-- any navigation entry that does not lead to real content.
+- standalone idea pages if the main page absorbs their useful content;
+- any navigation entry that does not lead to the focused article experience.
