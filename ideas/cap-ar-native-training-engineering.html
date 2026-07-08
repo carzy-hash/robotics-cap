@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>把机器人策略写成可复盘的程序 | Robotics CAP TechBlog</title>
+    <meta
+      name="description"
+      content="工程博客版候选稿：从一次机器人抓取失败出发，讨论 AR 原生 CAP 为什么更利于复盘、调试和数据闭环。"
+    >
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP TechBlog</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
+      </nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Candidate C · Engineering style</p>
+          <h1>把机器人策略写成可复盘的程序</h1>
+          <p class="lead">
+            CAP 的训练路线不只是模型范式选择，更是工程接口选择。主策略层如果保持 AR 原生，
+            就可以把目标、观察、动作调用、检查条件和恢复逻辑写成可读、可测试、可回放的策略程序。
+            这类程序接口也更贴近 LLM/VLM 已经擅长的条件生成、工具调用和多模态 grounding。
+          </p>
+          <div class="article-meta">
+            <span>Robotics CAP</span>
+            <span>Engineering candidate</span>
+            <time datetime="2026-07-09">Jul 9, 2026</time>
+          </div>
+          <ol class="toc" aria-label="文章目录">
+            <li><a href="#failure">从一次失败开始</a></li>
+            <li><a href="#strategy">主策略不是一段连续动作</a></li>
+            <li><a href="#interface">接口设计决定能不能复盘</a></li>
+            <li><a href="#data">失败不是终点</a></li>
+            <li><a href="#fm">FM 应该留在合适的位置</a></li>
+            <li><a href="#memo">路线备忘录</a></li>
+          </ol>
+        </header>
+
+        <div class="article-body">
+          <section id="failure">
+            <h2>从一次失败开始</h2>
+            <p>
+              先看一个很小的任务：机器人需要把桌上的红色杯子放进托盘。第一次执行失败了。
+              机械臂靠近杯子后抓空，末端夹爪停在杯子右侧两厘米的位置。如果日志主要停留在轨迹、图像和 success/fail 标签层面，
+              可能只留下一个失败标记：
+              <code>success=false</code>。
+            </p>
+            <p>
+              这对训练并不够。我们真正想知道的是：模型是不是看错了杯子？动作接口是不是拿到了错误坐标？
+              抓取前有没有检查目标是否仍然可见？失败后为什么没有换视角或重新估计位置？
+            </p>
+            <p>
+              CAP 的核心判断是，主策略层应该把这些问题显式写出来。
+            </p>
+          </section>
+
+          <section id="strategy">
+            <h2>主策略不是一段连续动作</h2>
+            <p>
+              在 CAP 里，模型不直接生成一整段长轨迹。它更像是在写一段任务程序：识别目标；读取视觉状态；
+              调用短 Action Chunk；检查执行结果；如果失败，重新观察；如果目标不可见，换视角；如果连续失败，停止并上报原因。
+            </p>
+            <p>
+              这类对象很适合被组织成 AR 训练样本。输入是任务、观察和机器人状态，输出是下一段策略代码或工具调用。
+              训练时监督的是“下一步应该怎么写”，推理时生成的也是同一种结构，评估时也能检查这段结构是否合理。
+            </p>
+            <p>
+              在目标、约束、分支和恢复逻辑这些主策略问题上，这通常比把主策略直接压成连续动作分布更容易调试。
+              连续生成方法可以很好地处理短时动作，也可以作为混合系统里的动作候选生成器或局部策略表示；
+              但目标、约束、分支和恢复逻辑更像程序，而不是向量场。
+            </p>
+            <pre><code>target = detect("red cup")
+if not verify_visible(target):
+    return reframe_camera()
+
+result = pick(target.pose)
+if not check_success(result):
+    return retry_or_stop(reason=result.failure)</code></pre>
+          </section>
+
+          <section id="interface">
+            <h2>接口设计决定能不能复盘</h2>
+            <p>
+              一个可用的 CAP 接口至少要留下四类痕迹。第一是观察痕迹：模型看到哪些物体、置信度是多少、目标位置来自哪一帧。
+              第二是决策痕迹：为什么选择当前动作接口，为什么不是重新定位或换视角。第三是执行痕迹：Action Chunk 的输入、输出、
+              耗时、碰撞检查和控制器返回值。第四是验证痕迹：完成条件是什么，检查通过还是失败，失败后进入哪个恢复分支。
+            </p>
+            <p>
+              回到红色杯子的例子。如果日志显示策略先写了 <code>target = detect("red cup")</code>，
+              随后调用 <code>pick(target.pose)</code>，但没有在抓取前执行 <code>verify_visible(target)</code>，
+              那么失败样本就不只是“抓空”。它变成了一个可训练修正：在目标可能移动或遮挡时，抓取前必须重新确认位姿。
+            </p>
+            <p>
+              下一轮数据可以直接加入监督样本：同样上下文下，模型应该先重新观察，再调用动作接口。
+              也就是说，日志字段不只是用来排查问题；它们可以映射成下一轮训练标签。
+            </p>
+          </section>
+
+          <section id="data">
+            <h2>失败不是终点</h2>
+            <p>
+              工程系统最怕的是失败不可解释。成功率下降时，团队只能猜：是视觉模型漂了，还是动作模型不稳，还是任务计划漏了约束。
+            </p>
+            <p>
+              AR 原生 CAP 的好处是把失败拆小。目标错位、接口参数错、观察不足、恢复条件缺失、停止条件过宽，
+              都可以落到策略代码的某一行、某个分支或某次工具调用上。
+            </p>
+            <p>
+              这也是它与 LLM/VLM 主接口相容的地方。CAP 主策略输出可以落在条件生成、代码生成、工具调用、多模态引用与检查推理上；
+              低层连续控制仍交给动作生成层和实时控制层。
+            </p>
+            <p>
+              这会改变评估方式。我们不只看最终成功率，也看中间指标：目标识别是否正确，碰撞约束是否被写入，
+              失败后是否重试，重试次数是否合理，停止原因是否可解释。
+            </p>
+          </section>
+
+          <section id="fm">
+            <h2>FM 应该留在合适的位置</h2>
+            <p>
+              这并不意味着 CAP 排斥 Flow Matching、扩散策略或其他连续生成方法。真实机器人仍然需要路径规划、控制器、
+              力反馈、避障和局部轨迹生成。对于短 horizon 的抓取、对齐、接触操作，连续生成方法可能非常合适。
+            </p>
+            <p>
+              关键边界在于：主策略层不要因为底层动作可以连续生成，就丢掉可读结构。更稳的分工是三层：
+              CAP 主策略层用 AR 生成可审计的策略程序；动作生成层生成短 Action Chunk；实时控制层负责跟踪、安全和低延迟反馈。
+            </p>
+            <p>
+              策略程序也不应该是任意自由文本。公开部署时，它需要受 schema、权限、sandbox 和 runtime checks 约束，
+              这样可读性才不会牺牲安全性。
+            </p>
+          </section>
+
+          <section id="memo" class="closing">
+            <h2>路线备忘录</h2>
+            <p>
+              CAP 值得坚持 AR 原生训练，不是因为 AR 天然会控制机器人，而是因为主策略层需要被观察、被测试、被复盘、被修正。
+            </p>
+            <p>
+              当机器人失败时，我们希望看到的不是一段沉默的轨迹，而是一条清楚的工程记录：模型以为目标在哪里，
+              调用了哪个接口，检查了什么，为什么重试，为什么停止。
+            </p>
+            <p>
+              能留下这种记录的策略，才容易从失败里学习。AR 原生 CAP 的价值就在这里：让机器人任务从一次次 rollout，
+              变成可以持续调试和积累的数据闭环。
+            </p>
+            <p>
+              这也是训练路线选择，而不只是日志设计：AR 留在主策略层，连续生成留在动作层，实时控制留在硬件闭环。
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP TechBlog</span>
+      <a href="./">Articles</a>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CAP 为什么应该坚持 AR 原生训练 | Robotics CAP TechBlog</title>
+    <meta
+      name="description"
+      content="产品研究博客版候选稿：直接说明 AR 原生训练为什么让 CAP 更可复用、更可调试、更容易形成数据闭环。"
+    >
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP TechBlog</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
+      </nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Candidate B · Product research style</p>
+          <h1>CAP 为什么应该坚持 AR 原生训练</h1>
+          <p class="lead">
+            在开放任务和长程任务中，仅生成动作往往不够；机器人系统越来越需要显式生成可执行任务结构。
+            CAP 的核心判断是：主策略层应该优先保持 autoregressive 原生训练，让模型像写代码一样生成目标、约束、
+            工具调用、检查条件和恢复逻辑。
+          </p>
+          <div class="article-meta">
+            <span>Robotics CAP</span>
+            <span>Product research candidate</span>
+            <time datetime="2026-07-09">Jul 9, 2026</time>
+          </div>
+          <ol class="toc" aria-label="文章目录">
+            <li><a href="#importance">为什么这件事重要</a></li>
+            <li><a href="#ar-scope">AR 不是直接生成所有动作</a></li>
+            <li><a href="#fm-position">FM 应该放在哪里</a></li>
+            <li><a href="#consistency">监督一致性</a></li>
+            <li><a href="#boundary">哪些问题不该交给主策略层</a></li>
+            <li><a href="#judgement">路线判断</a></li>
+          </ol>
+        </header>
+
+        <div class="article-body">
+          <section id="importance">
+            <h2>为什么这件事重要</h2>
+            <p>
+              机器人系统的难点，越来越不只是让机械臂完成一段动作，而是让系统知道自己为什么这么做、何时该停、
+              失败后如何恢复，以及怎样把一次失败变成下一次训练的数据。
+            </p>
+            <p>
+              CAP 路线的价值正在这里显现：它不把机器人任务压缩成一条不可读的连续动作轨迹，而是让模型生成可执行的策略代码。
+              策略代码可以调用视觉、规划、抓取、移动和检查模块，也可以在执行后重新观察、修正、重试或退出。
+              这里的“代码”更准确地说，是受约束的策略 DSL 或 API 调用，而不是任意自然语言程序。
+            </p>
+            <p>
+              这使 AR 原生训练不只是一个实现细节，而是一个路线选择。训练时监督的是策略结构，推理时生成的是策略结构，
+              调试时检查的仍然是策略结构。系统少一次范式转换，就有机会减少一类接口转换带来的调试成本。
+            </p>
+          </section>
+
+          <section id="ar-scope">
+            <h2>AR 不是直接生成所有动作</h2>
+            <p>
+              这里的 AR，不是要求模型逐 token 生成每一个关节控制量。CAP 要保留 AR 的，是主策略层。
+              在 CAP 中，“下一个 token”可以是策略代码的一部分：识别目标，读取视觉状态，调用动作接口，检查结果，
+              判断是否继续，必要时切换视角或重新规划。
+            </p>
+            <p>
+              因此，CAP 的训练样本可以自然表达为：任务描述、当前观察和机器人状态作为输入；模型输出一段策略代码；
+              策略代码调用短周期动作；执行后产生反馈；模型再生成下一段策略或停止条件。
+            </p>
+            <p>
+              这种形式与语言模型、代码模型和多模态模型的主接口保持相容。差别只是，生成结果不再停留于文本，
+              而是进入真实机器人执行闭环。
+            </p>
+            <p>
+              更谨慎地说，公开资料支持 AR/next-token 是代表性强模型的重要接口之一，但不应声称所有最强模型都已公开证明为纯 AR。
+              CAP 要复用的是语言任务描述、视觉观察 grounding、代码/工具调用生成这些能力，而不是假设 LLM/VLM 直接掌握低层控制。
+            </p>
+          </section>
+
+          <section id="fm-position">
+            <h2>FM 应该放在哪里</h2>
+            <p>
+              Flow Matching、扩散模型和其他连续生成方法在机器人里有明确价值，尤其适合短时动作生成、多峰轨迹分布、
+              接触丰富的操作和 visuomotor policy。问题不在于这些方法是否强，而在于它们是否应该成为 CAP 主策略层的默认表达。
+            </p>
+            <p>
+              对接触操作、多峰抓取、局部视觉运动策略来说，FM 和扩散可能正是合适的动作生成工具。CAP 的主张不是让 AR 接管这些层，
+              而是不要让动作层的连续生成范式吞掉主策略层的目标、约束和恢复逻辑。
+            </p>
+            <p>
+              主策略层处理的是另一类问题：目标是否被正确理解，约束是否被显式写出，观察是否足够，失败后是重试、换视角还是停止。
+              这些问题天然更像计划、代码和检查逻辑，而不是连续向量场。
+            </p>
+            <p>
+              如果把主策略层也压进连续动作生成，系统会失去很多可用的中间结构。失败时，我们可能只看到一段 rollout 失败了，
+              却很难判断是目标错了、约束漏了、感知不确定，还是动作生成器没有覆盖到正确模式。
+            </p>
+          </section>
+
+          <section id="consistency">
+            <h2>监督一致性</h2>
+            <p>
+              AR 原生 CAP 的关键优势是监督一致性。如果模型生成的是策略代码，训练数据就可以直接监督“策略应该怎么写”：
+              目标物体是否正确，安全约束是否出现，失败检查是否完整，是否在观察不足时暂停，是否把动作限制在短周期内执行。
+            </p>
+            <p>
+              比如机器人抓红色杯子失败，如果系统只留下 <code>success=false</code>，这只是一个负样本；
+              如果策略记录显示它调用了 <code>pick(target.pose)</code>，却没有先执行 <code>verify_visible(target)</code>，
+              失败就能变成一个局部监督：同样上下文下，下一步应该先重新确认目标位姿。
+            </p>
+            <p>
+              这种一致性还降低了工程系统的摩擦。训练对象、推理输出和评估对象都保持同一种形态：可读、可执行、可回放的策略结构。
+              开发者可以阅读代码、定位分支、复现失败、增加检查器，也可以把一次失败改写成下一次训练样本。
+              这不只是降低工程摩擦，而是决定失败数据能不能被规模化复用。
+            </p>
+          </section>
+
+          <section id="boundary">
+            <h2>哪些问题不该交给主策略层</h2>
+            <p>
+              坚持 AR 原生训练，并不意味着机器人系统只需要 AR。真实机器人仍然需要运动规划、碰撞检测、状态估计、视觉伺服、
+              力反馈、阻抗控制和安全停止。CAP 主策略层不能直接解决高频控制、接触稳定性、低延迟避障或精密对齐。
+            </p>
+            <p>
+              更合理的系统分工是三层：主策略层用 AR 生成可审计策略代码；动作生成层根据局部目标生成短 horizon 的 pose、
+              trajectory 或 Action Chunk；实时控制层负责 tracking、力控、安全约束和硬件执行。
+            </p>
+          </section>
+
+          <section id="judgement" class="closing">
+            <h2>路线判断</h2>
+            <p>
+              CAP 值得坚持 AR 原生，不是因为连续生成方法不重要，而是因为机器人主策略的核心胜负手在可检查的任务推理。
+              当机器人面对开放任务时，系统需要的不只是“动起来”，还要知道动向哪里、为什么动、何时停、失败后怎样恢复。
+            </p>
+            <p>
+              这是一条务实路线：让模型生成它已经擅长的结构，让底层模块完成它们更擅长的控制，
+              把复杂机器人任务拆成可监督、可执行、可复盘的短周期。CAP 路线的一个关键价值，正来自这种分层清晰和监督一致性。
+              它不争夺底层控制范式，而是守住主策略层的可解释训练接口。
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP TechBlog</span>
+      <a href="./">Articles</a>
+    </footer>
+  </body>
+</html>

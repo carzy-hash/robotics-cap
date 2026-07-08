@@ -22,13 +22,55 @@
     <main class="blog-home">
       <section class="latest" aria-label="Articles">
         <p class="publication-kicker">Articles</p>
-        <h1>Robotics CAP 的路线论证。</h1>
+        <h1>Robotics CAP 的路线论证与候选稿。</h1>
         <p class="lead">
-          当前博客用两篇文章建立核心判断：先说明为什么机器人主策略应该走 CapX 式策略代码路线，
-          再讨论为什么 CAP 的主策略训练应该尽量保持 AR 原生。
+          当前博客保留 CapX 路线主文，以及 CAP AR 原生训练的三种候选写法。三篇候选稿分别偏研究论证、
+          产品路线和工程复盘，方便并排 review。
         </p>
 
         <div class="post-list">
+          <article class="post-row">
+            <time datetime="2026-07-09">Jul 9, 2026</time>
+            <div>
+              <h2>
+                <a href="cap-ar-native-training-research.html">
+                  Candidate A：CAP 的主策略层为什么更适合 AR 原生训练
+                </a>
+              </h2>
+              <p>
+                研究博客版：从“主策略应该生成什么”出发，谨慎处理公开证据边界，并把 AR、FM 和扩散放回分层系统。
+              </p>
+              <a class="text-link" href="cap-ar-native-training-research.html">Review candidate</a>
+            </div>
+          </article>
+          <article class="post-row">
+            <time datetime="2026-07-09">Jul 9, 2026</time>
+            <div>
+              <h2>
+                <a href="cap-ar-native-training-product.html">
+                  Candidate B：CAP 为什么应该坚持 AR 原生训练
+                </a>
+              </h2>
+              <p>
+                产品研究版：更快说明为什么这件事重要，强调大模型能力复用、调试成本和机器人数据闭环。
+              </p>
+              <a class="text-link" href="cap-ar-native-training-product.html">Review candidate</a>
+            </div>
+          </article>
+          <article class="post-row">
+            <time datetime="2026-07-09">Jul 9, 2026</time>
+            <div>
+              <h2>
+                <a href="cap-ar-native-training-engineering.html">
+                  Candidate C：把机器人策略写成可复盘的程序
+                </a>
+              </h2>
+              <p>
+                工程博客版：从一次桌面抓取失败进入，强调接口设计、失败复盘、可观测性和训练数据闭环。
+              </p>
+              <a class="text-link" href="cap-ar-native-training-engineering.html">Review candidate</a>
+            </div>
+          </article>
           <article class="post-row">
             <time datetime="2026-07-08">Jul 8, 2026</time>
             <div>

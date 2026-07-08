@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CAP 的主策略层为什么更适合 AR 原生训练 | Robotics CAP TechBlog</title>
+    <meta
+      name="description"
+      content="研究博客版候选稿：从主策略层应该生成什么出发，讨论 CAP 为什么更适合 AR 原生训练。"
+    >
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP TechBlog</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
+      </nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Candidate A · Research style</p>
+          <h1>CAP 的主策略层为什么更适合 AR 原生训练</h1>
+          <p class="lead">
+            CAP 的关键问题不是机器人系统是否应该使用 Flow Matching 或扩散模型，而是哪些层应该使用它们。
+            对负责目标理解、约束表达、任务分解、执行检查和失败恢复的主策略层，AR/next-token 式训练提供了更自然的接口。
+          </p>
+          <div class="article-meta">
+            <span>Robotics CAP</span>
+            <span>Research candidate</span>
+            <time datetime="2026-07-09">Jul 9, 2026</time>
+          </div>
+          <ol class="toc" aria-label="文章目录">
+            <li><a href="#question">主策略应该生成什么</a></li>
+            <li><a href="#mechanism">AR 与 CAP 的接口相容</a></li>
+            <li><a href="#evidence">证据边界</a></li>
+            <li><a href="#fm">主策略层与连续生成的边界</a></li>
+            <li><a href="#layers">AR 在上，连续生成在下</a></li>
+            <li><a href="#conclusion">监督一致性</a></li>
+          </ol>
+        </header>
+
+        <div class="article-body">
+          <section id="question">
+            <h2>主策略应该生成什么</h2>
+            <p>
+              如果主策略不可读，机器人失败就很难转成训练资产。一次失败可能只留下 rollout 结果，
+              但系统真正需要知道的是：目标是否选错，约束是否漏掉，观察是否不足，恢复分支是否没有触发。
+            </p>
+            <p>
+              机器人学习里，一个常见分歧是：主策略是否应当直接被建模为连续动作分布，还是先生成可解释的任务结构，
+              再调用动作层完成局部执行。CAP 倾向后者。它希望模型生成的不是一整段不可分解的关节轨迹，
+              而是类似策略代码的中间对象：识别目标、查询视觉状态、调用动作接口、检查完成条件，并在失败时重试、换视角或退出。
+            </p>
+            <p>
+              这使训练问题发生变化。主策略不再被迫转换成连续向量场，而可以保持在语言模型和代码模型已经熟悉的生成形式里：
+              给定任务、观察和状态，逐步生成下一段策略、下一次工具调用或下一条检查条件。这里的 AR 不是要替代控制器，
+              而是让高层任务推理以可读的方式进入训练闭环。
+            </p>
+          </section>
+
+          <section id="mechanism">
+            <h2>AR 与 CAP 的接口相容</h2>
+            <p>
+              AR 模型的基本接口是根据上下文生成下一个 token。在 CAP 中，这个 token 可以属于一段策略代码、一条动作调用、
+              一个约束检查，或一个恢复分支。训练样本可以自然写成“任务与观察输入，输出策略片段；执行后获得反馈，
+              再生成下一步”。这种结构与代码生成和工具调用高度相似。
+            </p>
+            <pre><code>observation + task + execution trace
+-> next policy fragment / tool call / stop condition</code></pre>
+            <p>
+              这里的 token 不必只是一维文本 token。它可以覆盖文本、代码、工具调用 schema、离散化状态、视觉引用或 action API 参数。
+              CAP 主策略层复用 LLM/VLM 的也不是连续控制能力，而是条件生成、工具调用、代码生成、长上下文状态整合和多模态 grounding 能力。
+            </p>
+            <p>
+              它的优势不在于神秘的模型能力，而在于形态一致。训练时监督的是策略语言，推理时生成的是策略语言，
+              评估时检查的仍然是策略语言。中间对象可以被人读、被单元测试、被回放，也可以在失败样本中局部修正。
+              对机器人系统，这一点很实际：在开放任务中，很多系统级失败可能来自目标选错、约束遗漏、观察不足时继续执行，
+              或失败后没有合理退出条件。
+            </p>
+          </section>
+
+          <section id="evidence">
+            <h2>证据边界</h2>
+            <p>
+              公开技术资料能够支持一个谨慎判断：AR/next-token 是多个代表性强语言模型、多模态模型和代码模型的重要主接口之一。
+              例如公开报告中，GPT-4 被描述为基于 Transformer、通过预测文档中的下一个 token 进行预训练；GPT-4o system card
+              将其描述为 autoregressive omni model。这说明其公开主接口具有 AR 特征，但不等于披露全部内部模块。
+            </p>
+            <p>
+              但这类资料不能被扩展成“所有最强模型都完全公开证明为 AR”的断言。闭源模型的完整架构、训练配方和内部模块并不总是公开。
+              这里讨论的是公开可见的主训练/生成接口，不代表完整内部实现。更稳妥的说法是：AR/next-token 是当前强模型生态中
+              非常有代表性的主接口；CAP 若把主策略层组织成 AR 可训练对象，更容易复用这些模型的语言、代码和多模态推理能力。
+            </p>
+          </section>
+
+          <section id="fm">
+            <h2>主策略层与连续生成的边界</h2>
+            <p>
+              Flow Matching 的价值并不低。它擅长把连续分布建模为从噪声到数据的流，也适合某些动作生成问题。
+              扩散式策略在 visuomotor policy learning 中同样有清晰价值。问题是：这是否应成为 CAP 主策略层的默认表达。
+            </p>
+            <p>
+              主策略层要处理的通常是离散而结构化的问题：目标是否可见，约束是否满足，当前观察是否足够，失败后应继续、重试还是停止。
+              这些内容天然更像计划、代码和检查器，而不是一个连续向量场。如果把它们过早压进连续动作生成过程，
+              系统可能会失去关键的审计接口。失败样本更容易只留下 rollout 结果，而难以转化为“哪一步策略判断错了”的监督信号。
+            </p>
+            <p>
+              这并不是说 FM 或扩散不可解释。它们可以和 critic、constraint checker、planner trace 一起组成可分析系统。
+              只是默认情况下，它们不提供与策略代码同粒度的任务审计结构。
+            </p>
+          </section>
+
+          <section id="layers">
+            <h2>AR 在上，连续生成在下</h2>
+            <p>
+              更合理的结论不是 AR 战胜 FM，而是分层使用。CAP 主策略层适合用 AR 生成可审计的策略代码；
+              动作生成层可以根据局部目标生成短 horizon 的 pose、action 或 Action Chunk；实时控制层继续负责 tracking、
+              阻抗控制、力反馈、安全停止和低延迟避障。
+            </p>
+            <div class="callout">
+              <p>
+                简单说：主策略层负责任务、约束、检查和恢复；动作生成层负责 pose、trajectory 和 Action Chunk；
+                实时控制层负责 tracking、force、safety 和 latency。
+              </p>
+            </div>
+            <p>
+              在灵巧操作、接触丰富的 manipulation、多峰动作分布或短时 visuomotor control 中，FM 和扩散可能比简单离散动作 token
+              更合适。它们应当在动作层发挥作用，而不是被否定。CAP 需要坚持的是：不要因为低层动作可以连续生成，
+              就把高层目标、约束和恢复逻辑也交给不可读的连续过程。
+            </p>
+          </section>
+
+          <section id="conclusion" class="closing">
+            <h2>监督一致性</h2>
+            <p>
+              CAP 值得保持 AR 原生训练，核心原因是监督一致性。模型用与 LLM/VLM 主干相容的方式学习策略，
+              用可读结构表达任务推理，并把执行风险限制在短周期、可检查、可回放、可修正的闭环里。
+            </p>
+            <p>
+              因此，CAP 的主张应当是克制的：AR 适合机器人主策略层，FM/扩散适合动作生成和低层控制。
+              真正重要的是层次划分：让可审计的任务推理保持可审计，让连续动作生成回到它最擅长的位置。
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP TechBlog</span>
+      <a href="./">Articles</a>
+    </footer>
+  </body>
+</html>
