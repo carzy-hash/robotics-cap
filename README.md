@@ -1,13 +1,14 @@
 # Robotics CAP TechBlog
 
-这是一个极简 GitHub Pages 技术博客。当前站点只保留一个公开阅读中心：
+这是一个极简 GitHub Pages 技术博客。当前站点保留两篇公开路线文章：
 
 - `index.html`：博客首页，突出第一篇主文。
 - `ideas/index.html`：文章索引。
 - `ideas/capx-2026-route.html`：主文《为什么 CapX 式策略代码会是 2026 年最值得押注的机器人路线》。
+- `ideas/cap-ar-native-training.html`：文章《CAP 为什么应该坚持 AR 原生训练》。
 - `docs/outlines/capx-route-full-outline.md`：主文的富提纲来源。
 
-这个仓库不再维护项目门户、路线图、概念书、预览目录或拆分 idea 页面。后续只有当主文真的需要拆成系列文章时，才新增文章页。
+这个仓库不再维护项目门户、路线图、概念书、预览目录或旧拆分 idea 页面。后续只有当主文需要真正形成系列论证时，才新增文章页。
 
 ## 本地预览
 

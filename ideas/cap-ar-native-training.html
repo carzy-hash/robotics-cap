@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CAP 为什么应该坚持 AR 原生训练 | Robotics CAP TechBlog</title>
+    <meta
+      name="description"
+      content="讨论 CAP 模式为什么可以原生使用 AR 训练机器人策略层，而不必把 Flow Matching 作为主策略训练范式。"
+    >
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP TechBlog</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
+      </nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Training thesis</p>
+          <h1>CAP 为什么应该坚持 AR 原生训练</h1>
+          <p class="lead">
+            CAP 路线的一个关键优势是：机器人主策略可以直接用 AR 方式训练和推理。它不需要先把策略层转成
+            Flow Matching 问题，也不需要在最关键的任务决策处引入一个和语言/多模态主干不同的生成范式。
+            这会让大模型能力更容易复用，失败更容易复盘，机器人任务数据也更容易进入可规模化的训练闭环。
+          </p>
+          <div class="article-meta">
+            <span>Robotics CAP</span>
+            <span>AR Native Training</span>
+            <time datetime="2026-07-08">Jul 8, 2026</time>
+          </div>
+          <ol class="toc" aria-label="文章目录">
+            <li><a href="#thesis">核心判断</a></li>
+            <li><a href="#ar-in-cap">CAP 里的 AR 是什么</a></li>
+            <li><a href="#fact-index">公开证据边界</a></li>
+            <li><a href="#fm-contrast">为什么不把 FM 放在主策略层</a></li>
+            <li><a href="#consistency">监督一致性带来的价值</a></li>
+            <li><a href="#failure-modes">一致性减少哪些潜在问题</a></li>
+            <li><a href="#boundary">边界：FM 仍然有价值</a></li>
+            <li><a href="#capx-link">回到 CapX 路线</a></li>
+          </ol>
+        </header>
+
+        <div class="article-body">
+          <section id="thesis">
+            <h2>核心判断</h2>
+            <p>
+              CAP 的重点不是给机器人系统再堆一个模型组件，而是把机器人任务的主策略表达成模型已经擅长生成的东西：
+              可读的步骤、代码、工具调用、检查条件和恢复逻辑。只要主策略层这样表达，训练就可以自然落在
+              autoregressive，也就是逐 token、逐步骤生成的监督形式上。
+            </p>
+            <p>
+              这件事看起来像训练细节，实际上是路线选择。公开资料可确认的许多代表性强语言模型、代码模型和多模态模型，
+              都把 next-token 或 AR 式训练与推理作为核心接口之一。CAP 如果把可审计、可分解、允许短周期闭环的机器人主策略
+              也放到这个范式里，就能让任务监督、模型推理和工程接口保持一致。
+            </p>
+            <div class="callout">
+              <p>
+                这里的主张不是“AR 可以替代所有控制器”。主张是：机器人系统里负责目标、约束、观察、检查和恢复的主策略层，
+                应该优先保持 AR 原生，而不是强行先变成 Flow Matching 或扩散式动作生成问题。
+              </p>
+            </div>
+          </section>
+
+          <section id="ar-in-cap">
+            <h2>CAP 里的 AR 是什么</h2>
+            <p>
+              AR 在这里可以先理解为：让模型像写代码一样一步步写策略，而不是一次性生成一整段连续动作。
+            </p>
+            <p>
+              在普通语言任务里，AR 模型根据前文生成下一个 token。在 CAP 里，这个“下一个 token”可以是策略代码的一部分：
+              先识别目标，再查询视觉状态，再调用动作接口，再检查结果，再决定继续、重试、换视角或停止。
+            </p>
+            <p>
+              换句话说，CAP 不是让模型一次性吐出长关节轨迹，而是让模型生成一个可执行的任务程序。这个程序仍然可以逐步生成、
+              逐步监督、逐步纠错。训练样本也可以很自然地写成：
+            </p>
+            <pre><code>任务 + 观察 + 机器人状态
+-> 策略代码
+-> 短 Action Chunk 调用
+-> 执行反馈
+-> 下一段策略代码或停止条件</code></pre>
+            <p>
+              这和语言模型、代码模型的监督方式是同构的：输入上下文，生成下一段可检查的符号结构。区别只是这些符号最终会调用
+              机器人动作接口，而不是停在文本世界。
+            </p>
+          </section>
+
+          <section id="fact-index">
+            <h2>公开证据边界</h2>
+            <p>
+              这篇文章不把“所有最强模型都公开证明是 AR”当作事实。更谨慎的说法是：公开技术资料里，多个代表性强模型明确采用
+              next-token、autoregressive 或 decoder-only Transformer 这类范式；未公开完整架构的模型只能作为趋势参考，
+              不能当成硬证据。
+            </p>
+            <div class="stack-list">
+              <article>
+                <span>01</span>
+                <div>
+                  <h3>GPT-4</h3>
+                  <p>
+                    <a class="text-link" href="https://arxiv.org/abs/2303.08774">GPT-4 Technical Report</a>
+                    公开摘要中说明 GPT-4 是 Transformer-based，并用预测文档 next token 的方式预训练。本文只用它支持：
+                    next-token 仍是强模型常见主接口。
+                  </p>
+                </div>
+              </article>
+              <article>
+                <span>02</span>
+                <div>
+                  <h3>GPT-4o</h3>
+                  <p>
+                    <a class="text-link" href="https://arxiv.org/abs/2410.21276">GPT-4o System Card</a>
+                    将 GPT-4o 描述为 autoregressive omni model，输入输出覆盖文本、音频、图像和视频组合。本文只用它支持：
+                    多模态模型也可以保持 AR 式生成接口。
+                  </p>
+                </div>
+              </article>
+              <article>
+                <span>03</span>
+                <div>
+                  <h3>Gemini 1.5</h3>
+                  <p>
+                    <a class="text-link" href="https://arxiv.org/abs/2403.05530">Gemini 1.5 Report</a>
+                    用来核对 Gemini 系列公开报告中的多模态、长上下文和生成式建模描述；具体架构细节按报告原文限定，
+                    不在这里额外扩展成闭源模型的硬证据。
+                  </p>
+                </div>
+              </article>
+              <article>
+                <span>04</span>
+                <div>
+                  <h3>Flow Matching</h3>
+                  <p>
+                    <a class="text-link" href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>
+                    把 FM 定义为训练连续归一化流的生成建模路线，核心是回归条件概率路径上的向量场。本文用它作为
+                    连续生成路线的代表，而不是把 FM 写成低价值方法。
+                  </p>
+                </div>
+              </article>
+              <article>
+                <span>05</span>
+                <div>
+                  <h3>Diffusion Policy</h3>
+                  <p>
+                    <a class="text-link" href="https://arxiv.org/abs/2303.04137">Diffusion Policy</a>
+                    展示扩散式策略在机器人 visuomotor policy learning 中的价值，提醒我们不要把非 AR 动作层路线简单否定。
+                  </p>
+                </div>
+              </article>
+            </div>
+            <p>
+              这些资料直接支持的是事实边界：AR/next-token 是代表性强模型的常见主接口，FM/扩散是连续生成和机器人动作建模中的
+              有力路线。本文进一步提出的是分层工程判断，而不是由上述资料直接证明的定理：CAP 的主策略层适合保持 AR，
+              动作生成层和实时控制层可以选择 FM、扩散、规划器或传统控制方法。
+            </p>
+          </section>
+
+          <section id="fm-contrast">
+            <h2>为什么不把 FM 放在主策略层</h2>
+            <p>
+              Flow Matching 很适合描述连续分布如何从噪声流向数据，也适合某些动作生成场景。问题不在于 FM 有没有价值，
+              而在于它是否应该成为 CAP 主策略层的默认训练对象。
+            </p>
+            <p>
+              更强的对手方案通常也不是“把一切都压成连续向量场”，而是分层系统：VLM 或规划器理解任务，
+              diffusion/FM action head 生成短时动作，控制器负责跟踪和安全。CAP 要争的不是低层动作建模，
+              而是这个分层系统里最上面的主策略接口。
+            </p>
+            <p>
+              主策略层处理的是目标、约束、检查、分支和恢复。它需要回答的问题通常是：“目标是否可见？”“碰撞约束是否满足？”
+              “失败后应该重试还是换视角？”这些内容天然像代码和计划，而不像一个连续向量场。
+            </p>
+            <p>
+              如果主策略接口缺少显式中间结构，只把失败归因留给 rollout 和采样结果，系统集成会更难：数据标注更难转成监督，
+              失败样本更难复盘，跨平台迁移也更容易被底层动作分布绑住。这才是 CAP 倾向 AR 主策略的原因。
+            </p>
+          </section>
+
+          <section id="consistency">
+            <h2>监督一致性带来的价值</h2>
+            <p>
+              CAP 的训练样本可以直接监督“模型应该怎样写策略”。这比只监督最终动作成功更细：可以监督目标提取是否正确，
+              约束是否被写出来，观察不足时是否停止，执行失败后是否重新规划。
+            </p>
+            <table class="comparison">
+              <thead>
+                <tr>
+                  <th>层次</th>
+                  <th>AR 原生 CAP</th>
+                  <th>主策略层转成 FM</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>训练对象</td>
+                  <td>策略步骤、代码、调用、检查和恢复逻辑</td>
+                  <td>连续动作生成过程，或缺少显式策略结构的动作分布</td>
+                </tr>
+                <tr>
+                  <td>模型主干</td>
+                  <td>和 LLM/VLM 的 next-token 推理接口更接近</td>
+                  <td>需要额外桥接符号任务和连续动作目标</td>
+                </tr>
+                <tr>
+                  <td>监督粒度</td>
+                  <td>可监督每个中间决策是否合理</td>
+                  <td>若缺少审计接口，更容易把意图压缩到轨迹或向量场里</td>
+                </tr>
+                <tr>
+                  <td>调试方式</td>
+                  <td>读代码、看分支、查缺失约束</td>
+                  <td>若缺少 planner trace 或 checker，更多依赖采样结果和外部评估</td>
+                </tr>
+                <tr>
+                  <td>工程影响</td>
+                  <td>更容易复盘失败、积累策略数据、迁移到新任务</td>
+                  <td>失败样本更容易停留在 rollout 结果，难以直接变成策略监督</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              这种一致性很朴素，但很重要：训练时看到的是策略语言，推理时生成的也是策略语言，评估时检查的仍然是策略语言。
+              系统少一次形态转换，就少一类隐蔽问题。
+            </p>
+            <p>
+              一个简单判据是：如果中间对象能被人类审查、单元测试、回放和局部修正，它就适合进入 AR 策略代码；
+              如果对象主要是连续动作分布，并且评价主要来自 rollout，FM、扩散或其它连续生成方法可能更合适。
+            </p>
+          </section>
+
+          <section id="failure-modes">
+            <h2>一致性减少哪些潜在问题</h2>
+            <p>
+              机器人任务里的很多错误不是“手臂不会动”，而是策略层没有把风险说清楚：目标错了、约束漏了、观察不够还继续执行、
+              或者失败后没有退出条件。AR 原生 CAP 把这些问题暴露在可读策略里。
+            </p>
+            <div class="metric-grid">
+              <article>
+                <strong>目标错位</strong>
+                <p>策略代码能显式写出目标物体、姿态、位置和完成条件，减少意图被动作轨迹吞掉。</p>
+              </article>
+              <article>
+                <strong>接口损耗</strong>
+                <p>语言和视觉上下文不必先翻译成连续流目标，再从采样结果反推策略意图。</p>
+              </article>
+              <article>
+                <strong>调试不透明</strong>
+                <p>失败时可以定位到观察、路径求解、动作调用或验证步骤，而不是只看到一段失败动作。</p>
+              </article>
+              <article>
+                <strong>评估漂移</strong>
+                <p>评估不只看最终成功率，也能看中间约束、恢复策略和停止条件是否正确。</p>
+              </article>
+              <article>
+                <strong>仿真捷径</strong>
+                <p>代码更容易暴露依赖仿真内部状态、固定轨迹或不真实观察的 shortcut。</p>
+              </article>
+              <article>
+                <strong>迁移困难</strong>
+                <p>高层策略保持符号结构，底层动作接口可以替换，平台变化不必重写全部任务逻辑。</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="boundary">
+            <h2>边界：FM 仍然有价值</h2>
+            <p>
+              这篇文章不主张机器人系统只需要 AR。真实机器人仍然需要控制器、路径规划、状态估计、碰撞检测、力反馈和局部轨迹生成。
+              FM、扩散或其它连续生成方法，完全可能在动作接口层和低层策略里发挥作用。
+            </p>
+            <div class="callout">
+              <p>
+                CAP 不直接解决高频控制、接触稳定性、低延迟避障、力反馈闭环或精确视觉伺服。AR 主策略的优势来自可审计性、
+                中间决策监督和工具调用，不来自它天然更会控制连续动力学。
+              </p>
+            </div>
+            <p>
+              更准确的分工是三层：CAP 主策略层用 AR 生成可审计的策略代码；动作生成层根据局部目标生成短 horizon 的 pose、
+              action 或 Action Chunk；实时控制层负责 tracking、阻抗、力控和安全停止。
+            </p>
+            <p>
+              如果某个抓取、避障或对齐动作适合用 FM 或扩散生成短 Action Chunk，那就让它在那一层工作。
+              在灵巧操作、多峰动作分布、接触丰富的 manipulation 或短时 visuomotor policy 里，FM/扩散甚至可能比简单 AR 动作 token
+              更合适。
+            </p>
+            <p>
+              关键是不要反过来：不要因为底层动作可以用连续生成，就把主策略层也强行交给连续生成范式。目标、约束和恢复逻辑仍然应该保持可读。
+            </p>
+          </section>
+
+          <section id="capx-link" class="closing">
+            <h2>回到 CapX 路线</h2>
+            <p>
+              <a class="text-link" href="capx-2026-route.html">CapX 式策略代码路线</a>
+              的核心是：模型写策略代码，策略代码调用短 Action Chunk，执行后重新观察并修正。AR 原生训练正好服务这个结构。
+            </p>
+            <p>
+              也就是说，CAP 的优势不只是“代码可读”。更深一层的优势是监督一致性：我们用和强 LLM/VLM 主干相容的方式训练策略，
+              用同一种形态表达任务推理，并把机器人执行风险限制在可检查、可回放、可修正的短周期里。
+            </p>
+            <p>
+              CAP 值得坚持 AR 原生，不是因为 FM 不强，而是因为机器人主策略的胜负手在可检查的任务推理，
+              而不是连续动作生成本身。对于那些可符号审计、可分解、允许短周期闭环的任务部分，最稳的方式是把它们组织成
+              模型已经擅长的 AR 策略生成问题。
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP TechBlog</span>
+      <a href="../index.html">Home</a>
+    </footer>
+  </body>
+</html>
