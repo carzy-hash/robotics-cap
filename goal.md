@@ -145,7 +145,9 @@ After all work is complete, make the preview visible by default.
 
 Default behavior:
 
-- Start or reuse the local preview service.
+- Start or reuse the detached local preview service with `./scripts/review.sh`.
+- Leave the preview running after the iteration; use `./scripts/review.sh stop`
+  only when it is intentionally no longer needed.
 - Open the blog preview in the browser.
 - Use the GitHub Pages-shaped path:
 
