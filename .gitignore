@@ -1,0 +1,25 @@
+# Local preview processes and generated copies
+.preview/
+*.pid
+*.log
+
+# Agent and prompt scratch data
+.agent-transcripts/
+.prompts/
+*.context-dump
+
+# Generated review and render artifacts
+.cache/
+.tmp/
+screenshots/
+rendered/
+
+# Local environment and editor files
+.DS_Store
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+*.swp
+*~

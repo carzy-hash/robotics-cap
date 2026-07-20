@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>机器人是怎样学会干活的：主流流水线与 CAP | Robotics CAP TechBlog</title>
+    <meta name="description" content="从数据、模型、监督、仿真和评测出发，用一个红杯任务对比主流机器人操作流水线与 CAP。">
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP TechBlog</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
+      </nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Pipeline explainer</p>
+          <h1>机器人是怎样学会干活的：主流流水线与 CAP</h1>
+          <p class="lead">
+            主流机器人学习很像“看大量熟练工示范，再学着做”；CAP 则希望机器人在行动前再写一张机器可执行、
+            可以逐项检查的策略工单。这篇文章用同一个红杯任务，讲清两条路线的数据、模型、监督、仿真和评测。
+          </p>
+          <div class="article-meta">
+            <span>Robotics CAP</span>
+            <span>Mainstream vs CAP</span>
+            <time datetime="2026-07-11">Jul 11, 2026</time>
+          </div>
+          <ol class="toc" aria-label="文章目录">
+            <li><a href="#one-task">先看一个任务</a></li>
+            <li><a href="#mainstream">主流流水线</a></li>
+            <li><a href="#data">数据从哪里来</a></li>
+            <li><a href="#model">模型怎样学动作</a></li>
+            <li><a href="#supervision">监督和评测</a></li>
+            <li><a href="#cap">CAP 流水线</a></li>
+            <li><a href="#simulation">仿真与训练闭环</a></li>
+            <li><a href="#comparison">公平比较</a></li>
+          </ol>
+        </header>
+
+        <div class="article-body">
+          <section id="one-task">
+            <h2>先看一个任务：把红杯放进托盘</h2>
+            <p>
+              人听到这句话，会自然地找红杯、判断托盘位置、绕开障碍、伸手抓取，并在最后看一眼杯子是否真的放好。
+              机器人没有这些默认常识。它拿到的是摄像头图像、文字指令和自己的关节状态，最后必须给电机一串能执行的命令。
+            </p>
+            <p>今天有两种值得对比的组织方式：</p>
+            <div class="stack-list">
+              <article>
+                <span>01</span>
+                <div>
+                  <h3>以 VLA / 动作策略为代表的主流路线</h3>
+                  <p>观察画面和任务，预测下一小段动作，执行后继续观察，最后看任务是否成功。</p>
+                </div>
+              </article>
+              <article>
+                <span>02</span>
+                <div>
+                  <h3>CAP 路线</h3>
+                  <p>观察画面和任务，先生成受限策略程序，逐项检查目标、信息和约束，再调用短动作并验证结果。</p>
+                </div>
+              </article>
+            </div>
+            <div class="callout">
+              <p>
+                “策略工单”不是给人看的普通文字，也不是让大语言模型直接控制关节。它是一组机器可执行、类型和权限受限的步骤，
+                用来调用现有视觉、规划、动作与安全接口。
+              </p>
+            </div>
+          </section>
+
+          <section id="mainstream">
+            <h2>主流流水线：从示范直接学动作</h2>
+            <p>
+              最常见的起点叫行为克隆。人先遥操作机器人完成许多任务，模型反复学习“当时看到了什么、任务是什么、专家怎样动”。
+              这很像看大量驾驶示范，再学习在相似路口怎样打方向盘。
+            </p>
+            <pre><code>真实或仿真示范
+→ 图像 + 指令 + 机器人状态 + 专家动作
+→ 训练动作策略
+→ 观察 → 预测短动作 → 执行 → 再观察
+→ 在仿真和真机上统计结果</code></pre>
+            <p>
+              真实系统并不一定只有一个端到端模型。不少系统已经有高层规划器、安全规则、成功检测器或恢复模块。
+              这里讨论的是以行为克隆和视觉—语言—动作模型为代表的共同核心：大量监督直接落在动作预测和任务结果上。
+            </p>
+          </section>
+
+          <section id="data">
+            <h2>数据从哪里来</h2>
+            <div class="metric-grid">
+              <article>
+                <strong>真实遥操作</strong>
+                <p>人用控制器或主从机械臂完成任务，系统同步记录图像、状态和控制动作。DROID 是这一类数据的代表。</p>
+              </article>
+              <article>
+                <strong>跨机器人数据</strong>
+                <p>Open X-Embodiment 把多个机构、不同机器人和任务整理成共同格式，让模型看到更丰富的经验。</p>
+              </article>
+              <article>
+                <strong>仿真数据</strong>
+                <p>LIBERO、RoboCasa、Isaac Lab 等环境可改变场景、物体和物理参数，低成本地产生示范与失败。</p>
+              </article>
+            </div>
+            <p>
+              机器人数据不是普通录像。它必须把每一帧画面与机器人当时的姿态、坐标系和动作准确对齐。
+              仿真可以让机器人安全地失败上万次，却很难完全复制接触、软物体、传感器噪声和硬件磨损，因此最后仍要回到真机。
+            </p>
+          </section>
+
+          <section id="model">
+            <h2>模型怎样从画面走到动作</h2>
+            <p>
+              VLA 是 vision-language-action 的缩写，可以把它理解成“看画面、听指令并输出动作的模型”。
+              RT-2 和 OpenVLA 一类模型会把动作表示成类似文字 token 的离散符号；π0 则在视觉语言模型旁加入连续动作专家，
+              用 Flow Matching 产生平滑动作。
+            </p>
+            <p>
+              最终出口通常是一小段连续动作，也就是 Action Chunk。例如未来半秒如何移动机械臂。片段短，系统更容易重新观察；
+              片段长，动作可能更流畅，但错误也可能走得更远。高频伺服和电机控制仍由专门控制器处理。
+            </p>
+          </section>
+
+          <section id="supervision">
+            <h2>监督在哪里，效果怎样评测</h2>
+            <p>
+              “监督”就是训练时的标准答案。行为克隆最主要的答案是专家动作：模型预测的移动是否接近示范。
+              系统还可以加入成功标签、奖励、价值估计、视觉或语言辅助目标。可是目标选错、观察不足、约束漏掉等原因，
+              常常没有统一的显式记录，失败后需要从整个轨迹和外围日志倒查。
+            </p>
+            <p>一套可信评测至少回答五个白话问题：</p>
+            <ul>
+              <li><strong>能否完成：</strong>杯子最终是否进入托盘？</li>
+              <li><strong>换了环境还能否完成：</strong>杯子、桌子、光线或机器人变化后怎样？</li>
+              <li><strong>出错能否救回来：</strong>杯子滑落或目标被遮挡后会不会恢复？</li>
+              <li><strong>是否安全高效：</strong>有没有碰撞、超力、绕远路或等待太久？</li>
+              <li><strong>虚拟成绩能否落地：</strong>仿真与真机之间下降多少？</li>
+            </ul>
+          </section>
+
+          <section id="cap">
+            <h2>CAP 流水线：先形成可检查的策略工单</h2>
+            <p>
+              CAP 保留同样的摄像头、示范数据、动作模型和仿真器，但在理解任务与执行动作之间加入受限策略程序。
+              对红杯任务，它可以表达：找目标；看不清就换视角；检查路径和禁入区；执行短抓取；确认抓稳；失败则重试或停止。
+            </p>
+            <pre><code>观察 + 指令
+→ 低频策略模型生成受限步骤
+→ 审计目标、信息、约束与调用权限
+→ 运动规划器 / 动作专家执行短 Action Chunk
+→ 传感器验证世界是否符合预期
+→ 继续、重试、换视角或停止</code></pre>
+            <p>
+              高层策略模型不进入实时伺服环。它较低频地选择目标、工具和恢复分支；高频动作继续交给运动规划器、连续动作专家、
+              控制器和独立安全系统。CAP 的变化是把关键决策统一暴露为可以记录、训练和评测的位置，而不是首次发明规划或安全检查。
+            </p>
+
+            <h3>这些位置就是监督端点</h3>
+            <p>监督端点，就是系统在过程中可以被检查、纠正并留下记录的位置：</p>
+            <div class="module-grid">
+              <article><strong>目标</strong><p>杯子和完成条件选对了吗？</p></article>
+              <article><strong>观察</strong><p>证据足够吗，需要换视角吗？</p></article>
+              <article><strong>约束</strong><p>碰撞、速度、力和权限满足吗？</p></article>
+              <article><strong>调用</strong><p>动作参数、单位和返回值合法吗？</p></article>
+              <article><strong>状态</strong><p>执行后的世界符合预期吗？</p></article>
+              <article><strong>恢复</strong><p>应该继续、重试、降级还是停止？</p></article>
+            </div>
+            <p>
+              不同答案的可信度不同。碰撞、速度和权限尽量由确定性规则裁决；接触与动作结果优先看传感器或仿真物理结果；
+              视觉判断和模型自评只能作为带置信度的估计。独立低层安全控制器始终可以覆盖策略程序。
+            </p>
+
+            <h3>CAP 需要记录什么数据</h3>
+            <p>过程记录不是自由文本，而是一条带时间、版本、来源和置信度的结构化链：</p>
+            <pre><code>observation
+→ policy_step
+→ audit_result
+→ action_call
+→ action_result
+→ verification
+→ recovery
+→ outcome</code></pre>
+            <p>
+              这样一次失败不只剩“任务没完成”，而可能留下“目标正确，但抓取后验证失败，随后恢复选择错误”。
+              显式记录有机会让诊断更快，但只有端点定义正确、检查器经过校准时，错误归因才可信。
+            </p>
+          </section>
+
+          <section id="simulation">
+            <h2>CAP 怎样在仿真中运行和回流训练</h2>
+            <p>
+              仿真与真机应使用同一套有类型的动作接口：相同参数、单位、坐标、超时、失败码和取消方式，只替换执行后端。
+              策略只能读取两边共同拥有的信息；仿真内部的精确世界状态可以给评测器打标签，但不能偷偷作为策略输入。
+            </p>
+            <p>
+              测试框架可以移动杯子、制造遮挡、改变摩擦力或让一次抓取失败，然后检查策略是否在正确端点发现并恢复。
+              规则和物理标签可以自动回流；感知或语义判断需要抽检。训练集、调参集和评测集还要按场景与物体隔离，避免模型记住答案。
+            </p>
+            <div class="callout">
+              <p>
+                仿真的角色包括数据生成、模仿或强化学习、域随机化、系统调参、鲁棒性测试和基准评测；
+                它不是现实世界的替代品。关键结论仍需真机 outcome 复核。
+              </p>
+            </div>
+          </section>
+
+          <section id="comparison">
+            <h2>两条流水线放在同一张表里</h2>
+            <table class="comparison">
+              <thead><tr><th>问题</th><th>主流 VLA / 动作策略</th><th>CAP</th></tr></thead>
+              <tbody>
+                <tr><td>主要输出</td><td>动作 token 或连续 Action Chunk</td><td>受限策略程序，再调用相同动作底座</td></tr>
+                <tr><td>主要数据</td><td>观察、指令、状态、专家动作</td><td>相同原始数据，加策略、检查和恢复记录</td></tr>
+                <tr><td>监督重点</td><td>动作和最终结果为主，也可有辅助目标</td><td>动作之外，再监督六类过程端点</td></tr>
+                <tr><td>仿真用途</td><td>数据、训练、随机化、调参与评测</td><td>再加入端点注错、审计和恢复样本</td></tr>
+                <tr><td>失败定位</td><td>结合轨迹、模型与外围日志倒查</td><td>有机会定位到策略步骤，但依赖可靠端点</td></tr>
+                <tr><td>主要代价</td><td>真实数据贵、分布外失败难处理</td><td>接口和标签工程、检查误差、推理延迟</td></tr>
+              </tbody>
+            </table>
+
+            <h3>优势不能靠一段成功视频证明</h3>
+            <p>
+              公平实验应让两条路线共享视觉骨干、动作专家、原始示范、任务集合、观测权限、安全控制和真机预算，
+              同时匹配或明确报告总算力、墙钟时间、观察次数和动作调用次数。
+            </p>
+            <p>
+              然后分别比较：能否完成、出错能否救回来、是否违反约束、定位一次失败需要多久、增加多少标注成本、
+              推理有多慢、换机器人要投入多少工时，以及仿真到真机下降多少。
+            </p>
+            <p>
+              因此 CAP 当前是一个可证伪的系统假设：如果显式策略和端点监督不能提高恢复、降低违规与诊断成本，
+              或它带来的延迟和工程成本更大，那么这层复杂度就不值得。它真正要验证的，不是“代码看起来更清楚”，
+              而是机器人是否因为过程可监督而变得更可靠、更容易改进。
+            </p>
+          </section>
+
+          <section id="sources" class="closing">
+            <h2>公开资料与设计边界</h2>
+            <p>
+              主流流水线的事实描述来自公开项目；CAP 的策略程序、监督端点与预期优势是本文提出、仍待实验验证的设计。
+            </p>
+            <p>
+              <a class="text-link" href="https://robotics-transformer2.github.io/">RT-2</a> ·
+              <a class="text-link" href="https://robotics-transformer-x.github.io/">Open X-Embodiment / RT-X</a> ·
+              <a class="text-link" href="https://openvla.github.io/">OpenVLA</a> ·
+              <a class="text-link" href="https://www.physicalintelligence.company/download/pi0.pdf">π0</a> ·
+              <a class="text-link" href="https://droid-dataset.github.io/">DROID</a> ·
+              <a class="text-link" href="https://libero-project.github.io/main.html">LIBERO</a> ·
+              <a class="text-link" href="https://robocasa.ai/">RoboCasa</a> ·
+              <a class="text-link" href="https://developer.nvidia.com/isaac/lab">Isaac Lab</a>
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP TechBlog</span>
+      <a href="./">All articles</a>
+    </footer>
+  </body>
+</html>

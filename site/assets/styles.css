@@ -425,6 +425,118 @@ li code {
   color: #333333;
 }
 
+.pipeline-map {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 28px 0;
+}
+
+.pipeline-node {
+  position: relative;
+  min-height: 170px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.pipeline-node:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: -17px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #ffffff;
+  font-weight: 900;
+  line-height: 24px;
+  text-align: center;
+  transform: translateY(-50%);
+}
+
+.pipeline-node .node-label {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pipeline-node strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.05rem;
+}
+
+.pipeline-node p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.io-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.io-panel {
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.io-panel h3 {
+  margin-top: 0;
+}
+
+.io-panel ul {
+  margin-bottom: 0;
+  padding-left: 20px;
+}
+
+.io-model {
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 900;
+  text-align: center;
+  writing-mode: vertical-rl;
+}
+
+.frame-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.frame-strip span {
+  min-height: 112px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: linear-gradient(145deg, #f7f7f5, #ffffff);
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.frame-strip b {
+  display: block;
+  margin: 18px 0 7px;
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
 .closing {
   padding-bottom: 92px;
 }
@@ -458,6 +570,28 @@ li code {
   .module-grid,
   .prereq-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pipeline-map,
+  .frame-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline-node:not(:last-child)::after {
+    content: "↓";
+    top: auto;
+    right: 50%;
+    bottom: -17px;
+    transform: translateX(50%);
+  }
+
+  .io-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .io-model {
+    min-height: 64px;
+    writing-mode: horizontal-tb;
   }
 
   .feature-visual {

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Candidate D：机器人是怎样从示范里学会动作的</title>
+    <meta name="description" content="先完整解释主流 BC 机器人操作流水线，再引出 CAP。">
+    <link rel="stylesheet" href="../../site/assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../../site/index.html"><span class="brand-mark">CAP</span><span>Robotics CAP TechBlog</span></a>
+      <nav class="nav"><a href="../../site/index.html">Published site</a><a class="active" href="README.md">Candidates</a></nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Candidate D · Step-by-step explainer</p>
+          <h1>机器人是怎样从示范里学会动作的</h1>
+          <p class="lead">
+            在比较不同机器人路线之前，先把今天最常见的训练方法看清楚：人遥操作机器人完成任务，系统记录机器人当时看到了什么、
+            听到了什么、身体处在什么状态，以及人让它做了什么动作。模型学习的核心，就是从前三项预测第四项。
+          </p>
+          <div class="article-meta"><span>Candidate D</span><span>Behavior Cloning First</span><time datetime="2026-07-11">Jul 11, 2026</time></div>
+          <ol class="toc">
+            <li><a href="#task">先看任务</a></li><li><a href="#record">数据记录什么</a></li>
+            <li><a href="#bc">BC 在训练什么</a></li><li><a href="#run">机器人怎样运行</a></li>
+            <li><a href="#limit">这套方法的边界</a></li><li><a href="#cap">然后再看 CAP</a></li>
+          </ol>
+        </header>
+
+        <div class="article-body">
+          <section id="task">
+            <h2>先看一个普通任务</h2>
+            <p>我们对机器人说：“把桌上的红杯放进托盘。”机器人要完成这件事，至少需要接触三类信息，再输出一类信息。</p>
+            <div class="io-stage">
+              <div class="io-panel">
+                <h3>机器人收到什么</h3>
+                <ul>
+                  <li><strong>看见：</strong>摄像头里的桌面、红杯、托盘和障碍物；</li>
+                  <li><strong>听懂：</strong>“把红杯放进托盘”这句任务指令；</li>
+                  <li><strong>感知身体：</strong>机械臂和夹爪当前在哪里、是否张开。</li>
+                </ul>
+              </div>
+              <div class="io-model">机器人策略模型</div>
+              <div class="io-panel">
+                <h3>机器人输出什么</h3>
+                <ul>
+                  <li>机械臂往哪个方向移动；</li>
+                  <li>移动多远、旋转多少；</li>
+                  <li>夹爪何时张开或闭合；</li>
+                  <li>接下来一小段时间的连续动作。</li>
+                </ul>
+              </div>
+            </div>
+            <p>
+              对人来说，“红杯”是一个有意义的物体；对电机来说，最后必须变成一串具体动作。
+              主流机器人学习要解决的，就是如何把左边的信息变成右边的动作。
+            </p>
+          </section>
+
+          <section id="record">
+            <h2>训练数据不是录像，而是对齐的操作记录</h2>
+            <p>
+              最容易理解的数据采集方式，是让人遥操作一台真实机器人。人看着桌面，用控制器带着机械臂抓起红杯。
+              系统不是只把过程拍成视频，而是在每一个时刻同步记录四样东西。
+            </p>
+            <div class="pipeline-map">
+              <div class="pipeline-node"><span class="node-label">Observation</span><strong>摄像头画面</strong><p>机器人此刻看见红杯、托盘和周围环境。</p></div>
+              <div class="pipeline-node"><span class="node-label">Instruction</span><strong>任务指令</strong><p>这一整段操作想完成什么。</p></div>
+              <div class="pipeline-node"><span class="node-label">Robot state</span><strong>身体状态</strong><p>关节、夹爪和末端执行器当前在哪里。</p></div>
+              <div class="pipeline-node"><span class="node-label">Action label</span><strong>人的动作</strong><p>操作者下一刻让机器人怎样移动。</p></div>
+            </div>
+            <p>
+              这里可以先忽略不同相机、不同机器人和不同实验室的差异。最重要的共同形态是：
+              <strong>每一份观察，都配有当时人类操作者给出的动作答案。</strong>
+            </p>
+          </section>
+
+          <section id="bc">
+            <h2>BC 训练的，就是“下一步应该怎样动”</h2>
+            <p>
+              这种训练通常叫 Behavior Cloning，简称 BC，也就是行为克隆。它像学徒站在熟练工旁边：看同样的画面、听同样的任务，
+              然后猜熟练工下一步会怎样移动。如果猜错，就根据标准答案调整模型；重复很多次后，模型越来越接近示范动作。
+            </p>
+            <div class="pipeline-map">
+              <div class="pipeline-node"><span class="node-label">Step 1</span><strong>拿出一条记录</strong><p>画面、指令、身体状态，以及人类动作答案。</p></div>
+              <div class="pipeline-node"><span class="node-label">Step 2</span><strong>模型预测动作</strong><p>只给前三项，让模型猜机械臂下一步怎样动。</p></div>
+              <div class="pipeline-node"><span class="node-label">Step 3</span><strong>与示范比较</strong><p>预测动作和人类动作相差多少。</p></div>
+              <div class="pipeline-node"><span class="node-label">Step 4</span><strong>调整模型</strong><p>让下一次预测更接近示范，再换一条记录重复。</p></div>
+            </div>
+            <div class="callout"><p><strong>BC 的核心监督对象是动作。</strong>老师告诉模型的主要答案不是一篇计划书，而是“看到这个状态时，专家接下来做了什么”。</p></div>
+            <p>
+              有的模型把动作变成离散符号，有的直接生成连续轨迹；有的只预测一步，有的预测一小段连续动作。
+              这些实现各不相同，但都在学习同一个核心映射：<strong>观察和任务 → 动作</strong>。
+            </p>
+          </section>
+
+          <section id="run">
+            <h2>训练完成后，机器人怎样真正运行</h2>
+            <p>部署时已经没有人给出动作答案。机器人只能把当前画面和任务交给模型，执行模型给出的动作，然后重新看一眼。</p>
+            <div class="frame-strip">
+              <span><b>①</b>看见红杯在左边</span><span><b>②</b>模型输出向左靠近</span><span><b>③</b>执行一小段动作</span><span><b>④</b>摄像头获得新画面</span><span><b>⑤</b>再次预测下一段动作</span>
+            </div>
+            <p>
+              这就是最基本的闭环。模型输出的一小段连续动作常被叫作 Action Chunk。它可以包含机械臂的平移、旋转和夹爪开合。
+              底层控制器负责把这些目标变成更高频、更平滑的电机控制。
+            </p>
+          </section>
+
+          <section id="limit">
+            <h2>先理解它的价值，再理解它的边界</h2>
+            <p>
+              BC 的价值是直接：只要有足够好的操作示范，系统就能把人类动作转成清晰的训练信号。
+              它不要求每条数据都额外写出一份详细计划，因此可以规模化采集。
+            </p>
+            <p>
+              但动作答案没有完整写出“为什么这样动”。如果机器人伸向了错误杯子，原因可能是目标理解错、画面没看清、路径选择错，
+              也可能只是最后没抓稳。实际系统可以在外围加入规划、安全规则和恢复逻辑，但这些中间判断往往没有统一进入同一套训练记录。
+            </p>
+          </section>
+
+          <section id="cap" class="closing">
+            <h2>理解动作训练后，再看 CAP 改了什么</h2>
+            <p>
+              CAP 不替换 BC 学到的动作能力。它接受主流流水线已经擅长的部分：视觉模块继续看环境，动作模型继续产生短动作，
+              控制器继续做高频执行。
+            </p>
+            <p>
+              CAP 想增加的是动作之前的策略层：目标是谁、是否看清、要调用哪个动作能力、约束是什么、动作后检查什么、失败后怎么办。
+              这些信息形成一份机器可执行、可以监督的策略程序。
+            </p>
+            <pre><code>主流核心：观察 + 指令 → BC 动作模型 → 短动作
+
+CAP 增加：观察 + 指令 → 策略程序 → 检查 → 调用同一个短动作 → 验证</code></pre>
+            <p>
+              所以后续真正要比较的不是“动作模型和文字模型谁更强”，而是：在保留同一动作底座时，
+              把动作前后的策略也纳入训练，能不能让机器人更容易发现错误、恢复失败和积累有用数据。
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer class="footer"><span>Local candidate · not published</span><a href="README.md">Candidate notes</a></footer>
+  </body>
+</html>

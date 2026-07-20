@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Candidate E：一张图看懂机器人怎样学习动作</title>
+    <meta name="description" content="用图示先建立主流 BC 机器人操作流水线，再引出 CAP。">
+    <link rel="stylesheet" href="../../site/assets/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../../site/index.html"><span class="brand-mark">CAP</span><span>Robotics CAP TechBlog</span></a>
+      <nav class="nav"><a href="../../site/index.html">Published site</a><a class="active" href="README.md">Candidates</a></nav>
+    </header>
+
+    <main class="article-shell">
+      <article>
+        <header class="article-hero">
+          <p class="eyebrow">Candidate E · Visual-first explainer</p>
+          <h1>一张图看懂机器人怎样学习动作</h1>
+          <p class="lead">
+            先不谈模型名字，也不比较路线。把主流机器人操作训练想成一所驾校：人先开给机器人看，
+            系统把“当时看到了什么”和“教练当时怎么操作”一一对齐，模型再学习从前者预测后者。
+          </p>
+          <div class="article-meta"><span>Candidate E</span><span>Visual First</span><time datetime="2026-07-11">Jul 11, 2026</time></div>
+        </header>
+
+        <div class="article-body">
+          <section id="map">
+            <h2>先看完整地图</h2>
+            <div class="pipeline-map">
+              <div class="pipeline-node"><span class="node-label">Collect</span><strong>人遥操作机器人</strong><p>人亲自完成抓杯子，系统记录整个过程。</p></div>
+              <div class="pipeline-node"><span class="node-label">Dataset</span><strong>观察与动作对齐</strong><p>每个时刻都保存画面、任务、身体状态和人的动作。</p></div>
+              <div class="pipeline-node"><span class="node-label">Train</span><strong>BC 学习模仿</strong><p>模型根据观察猜动作，再用人的动作纠正自己。</p></div>
+              <div class="pipeline-node"><span class="node-label">Deploy</span><strong>机器人自己行动</strong><p>模型看新画面，连续输出一小段一小段动作。</p></div>
+            </div>
+            <p>
+              这一整条流水线的重点只有一句话：<strong>我们采集的是“看到什么”与“怎样行动”的配对数据，BC 训练的是从观察到动作的映射。</strong>
+            </p>
+          </section>
+
+          <section id="robot-view">
+            <h2>机器人到底能看到什么、知道什么</h2>
+            <p>任务仍然是“把红杯放进托盘”。从机器人的角度，它拿到的不是人脑里的完整世界，而是几组传感器数字。</p>
+            <div class="io-stage">
+              <div class="io-panel">
+                <h3>输入：机器人此刻拥有的信息</h3>
+                <ul>
+                  <li>摄像头画面：杯子、托盘、桌面；</li>
+                  <li>语言任务：要移动哪个物体、放到哪里；</li>
+                  <li>身体状态：手臂姿态、夹爪状态；</li>
+                  <li>可选传感器：力、触觉或深度。</li>
+                </ul>
+              </div>
+              <div class="io-model">策略模型</div>
+              <div class="io-panel">
+                <h3>输出：机器人接下来怎么动</h3>
+                <ul>
+                  <li>手臂向前、向左或向上多少；</li>
+                  <li>末端朝哪个方向旋转；</li>
+                  <li>夹爪何时张开、闭合；</li>
+                  <li>未来一小段时间的动作序列。</li>
+                </ul>
+              </div>
+            </div>
+            <p>模型不需要输出一篇解释才能驱动机器人。它的考试答案首先是动作，因为只有动作最终能让杯子移动。</p>
+          </section>
+
+          <section id="collection">
+            <h2>第一段：人先开给机器人看</h2>
+            <p>
+              最贴近真实机器人的数据采集方式，是由人直接遥操作真实机器人。人看到红杯，控制机械臂靠近、闭合夹爪、抬起并放进托盘。
+              摄像头和机器人控制系统共同留下时间对齐的操作记录。
+            </p>
+            <div class="frame-strip">
+              <span><b>画面 1</b>红杯在桌面左侧</span><span><b>动作 1</b>手臂向左靠近</span><span><b>画面 2</b>夹爪来到杯子旁</span><span><b>动作 2</b>闭合夹爪并抬起</span><span><b>结果</b>杯子离开桌面</span>
+            </div>
+            <p>
+              这不是只供人观看的视频。系统知道哪一帧画面对应哪一个动作，也知道机器人当时的身体状态。
+              可以把每个时刻想成一张有问题、有答案的练习卡。
+            </p>
+          </section>
+
+          <section id="training">
+            <h2>第二段：BC 反复做“看图猜动作”</h2>
+            <p>Behavior Cloning，简称 BC，就是行为克隆。训练时，系统先把练习卡的动作答案遮住，只把画面、任务和身体状态给模型。</p>
+            <div class="stack-list">
+              <article><span>1</span><div><h3>模型作答</h3><p>模型预测：机械臂接下来应该向左移动，并略微下降。</p></div></article>
+              <article><span>2</span><div><h3>揭晓人类答案</h3><p>数据记录显示：操作者确实向左移动，但下降幅度更小。</p></div></article>
+              <article><span>3</span><div><h3>根据误差调整</h3><p>训练算法改变模型参数，让它下次更接近操作者的动作。</p></div></article>
+              <article><span>4</span><div><h3>重复很多次</h3><p>换场景、换位置、换任务，直到模型能对新画面给出合理动作。</p></div></article>
+            </div>
+            <div class="callout"><p>BC 的“老师”主要在动作出口等着：模型给出的动作和示范动作相差多少，就是最直接的训练信号。</p></div>
+          </section>
+
+          <section id="deployment">
+            <h2>第三段：部署时不再有标准答案</h2>
+            <p>
+              真正运行时，机器人看到的是从未完全见过的新画面。模型输出未来一小段动作，机器人执行，摄像头得到新画面，模型再次输出动作。
+              这段短动作常叫 Action Chunk，可以把它理解成“接下来半秒左右怎么动”。
+            </p>
+            <pre><code>看一眼 → 输出短动作 → 执行 → 再看一眼 → 输出下一段动作</code></pre>
+            <p>
+              低层控制器仍以更高频率保证电机平滑运行。BC 模型解决的是“下一小段动作应该是什么”，并不等于它独自承担所有安全、规划和控制。
+            </p>
+          </section>
+
+          <section id="transition">
+            <h2>到这里，才开始问 CAP 为什么不同</h2>
+            <p>
+              现在我们已经知道主流流水线训练了什么：它积累大量观察—动作配对，让模型越来越擅长从当前状态预测下一段动作。
+              CAP 接受并复用这份能力，而不是从头反对它。
+            </p>
+            <p>
+              CAP 关心的是动作答案之外缺少的那部分结构：机器人为什么选择红杯、当前是否看清、这个动作要满足什么约束、
+              执行后应该检查什么、失败时应该怎样恢复。
+            </p>
+            <div class="pipeline-map">
+              <div class="pipeline-node"><span class="node-label">Observe</span><strong>获取同样的观察</strong><p>图像、指令和身体状态仍然是起点。</p></div>
+              <div class="pipeline-node"><span class="node-label">Plan</span><strong>生成受限策略</strong><p>明确目标、观察需求、约束和下一项调用。</p></div>
+              <div class="pipeline-node"><span class="node-label">Act</span><strong>调用 BC 动作能力</strong><p>底层模型和控制器继续执行短动作。</p></div>
+              <div class="pipeline-node"><span class="node-label">Check</span><strong>验证并留下记录</strong><p>判断结果，选择继续、重试或停止。</p></div>
+            </div>
+            <p>
+              所以 CAP 的核心问题可以说得很具体：除了训练“看到这个画面应该怎样动”，
+              我们能不能也训练“行动前应该做出什么判断，行动后应该检查什么结果”？
+            </p>
+          </section>
+
+          <section id="ending" class="closing">
+            <h2>两篇候选稿接下来要选择什么</h2>
+            <p>
+              这版选择先给整张流水线地图，再拆开解释。它牺牲了一些细节，但让读者从第一屏就知道训练数据、BC 和部署之间是什么关系。
+              如果采用这条叙事，后续 CAP 部分也应继续用同样的四段图，而不是突然进入模型名词和系统接口清单。
+            </p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer class="footer"><span>Local candidate · not published</span><a href="README.md">Candidate notes</a></footer>
+  </body>
+</html>

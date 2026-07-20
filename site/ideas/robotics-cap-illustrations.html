@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Robotics CAP 插画与 Prompt 图谱 | Robotics CAP TechBlog</title>
+    <meta name="description" content="集中展示 Robotics CAP 14 组概念插画、统一目标和三种风格的完整生成 Prompt。">
+    <link rel="stylesheet" href="../assets/styles.css">
+    <style>
+      :root {
+        --gallery-blue: #2056d8;
+        --gallery-orange: #e86f19;
+        --gallery-wash: #f3f5f8;
+      }
+
+      .gallery-shell {
+        width: min(1560px, calc(100% - 36px));
+        margin: 0 auto;
+      }
+
+      .gallery-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.65fr);
+        gap: clamp(32px, 6vw, 92px);
+        align-items: end;
+        padding: clamp(64px, 9vw, 128px) 0 52px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .gallery-hero h1 {
+        max-width: 1050px;
+        margin-bottom: 22px;
+        font-size: clamp(2.7rem, 6.7vw, 7.3rem);
+      }
+
+      .gallery-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+
+      .gallery-stat {
+        min-height: 118px;
+        padding: 20px;
+        background: #fff;
+      }
+
+      .gallery-stat strong {
+        display: block;
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .gallery-stat span {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .gallery-guide {
+        display: grid;
+        grid-template-columns: minmax(240px, 0.62fr) minmax(0, 1.38fr);
+        gap: clamp(28px, 5vw, 72px);
+        padding: 42px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .gallery-guide h2 {
+        position: sticky;
+        top: 94px;
+        margin: 0;
+        font-size: clamp(1.55rem, 2.5vw, 2.25rem);
+      }
+
+      .prompt-rules {
+        display: grid;
+        gap: 12px;
+      }
+
+      .prompt-rule {
+        padding: 18px 20px;
+        background: var(--gallery-wash);
+        border-left: 3px solid var(--ink);
+      }
+
+      .prompt-rule:nth-child(2) { border-color: var(--gallery-blue); }
+      .prompt-rule:nth-child(3) { border-color: var(--gallery-orange); }
+      .prompt-rule:nth-child(4) { border-color: #8b6f47; }
+
+      .gallery-toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 28px 0 42px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .gallery-toc a {
+        padding: 7px 11px;
+        background: var(--soft);
+        color: #444;
+        font-size: 0.87rem;
+        font-weight: 700;
+      }
+
+      .gallery-toc a:hover {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .concept-section {
+        padding: clamp(52px, 7vw, 92px) 0;
+        border-bottom: 1px solid var(--line);
+        scroll-margin-top: 84px;
+      }
+
+      .concept-heading {
+        display: grid;
+        grid-template-columns: minmax(80px, 0.2fr) minmax(0, 1.8fr);
+        gap: 24px;
+        margin-bottom: 34px;
+      }
+
+      .concept-number {
+        color: var(--accent);
+        font-size: clamp(2rem, 4vw, 4.4rem);
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .concept-heading h2 {
+        margin-bottom: 10px;
+      }
+
+      .concept-goal {
+        max-width: 980px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.04rem;
+      }
+
+      .illustration-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .illustration-card {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .illustration-image {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        background: var(--soft);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .illustration-copy {
+        padding: 18px;
+      }
+
+      .style-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .style-line h3 {
+        margin: 0;
+      }
+
+      .style-badge {
+        padding: 3px 8px;
+        border: 1px solid currentColor;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .prompt-details {
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+
+      .prompt-details summary {
+        cursor: pointer;
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      .prompt-details pre {
+        max-height: 520px;
+        margin: 14px 0 0;
+        overflow: auto;
+        padding: 16px;
+        background: var(--code);
+        color: var(--code-ink);
+        font-size: 0.78rem;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .copy-prompt {
+        margin-top: 10px;
+        border: 1px solid var(--ink);
+        padding: 7px 10px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .copy-prompt:hover,
+      .copy-prompt:focus-visible {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      @media (max-width: 1050px) {
+        .gallery-hero,
+        .gallery-guide {
+          grid-template-columns: 1fr;
+        }
+
+        .gallery-guide h2 {
+          position: static;
+        }
+
+        .illustration-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .illustration-card {
+          display: grid;
+          grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+        }
+
+        .illustration-image {
+          height: 100%;
+          border-right: 1px solid var(--line);
+          border-bottom: 0;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .gallery-hero {
+          padding-top: 48px;
+        }
+
+        .concept-heading,
+        .illustration-card {
+          grid-template-columns: 1fr;
+        }
+
+        .concept-number {
+          font-size: 1.3rem;
+        }
+
+        .illustration-image {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Robotics CAP TechBlog 首页">
+        <span class="brand-mark">CAP</span>
+        <span>Robotics CAP TechBlog</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="../index.html">Home</a>
+        <a class="active" href="./">Articles</a>
+      </nav>
+    </header>
+
+    <main class="gallery-shell">
+      <header class="gallery-hero">
+        <div>
+          <p class="publication-kicker">Illustration atlas</p>
+          <h1>Robotics CAP 插画与 Prompt 图谱</h1>
+          <p class="lead">14 组概念，42 张插画。每组先定义统一目标，再映射到扁平科普、黏土 3D 和手绘水彩三种视觉语言。</p>
+        </div>
+        <div class="gallery-summary" aria-label="图谱统计">
+          <div class="gallery-stat"><strong>14</strong><span>概念组</span></div>
+          <div class="gallery-stat"><strong>42</strong><span>生成插画</span></div>
+          <div class="gallery-stat"><strong>3</strong><span>视觉风格</span></div>
+          <div class="gallery-stat"><strong>16:9</strong><span>统一画幅</span></div>
+        </div>
+      </header>
+
+      <section class="gallery-guide" aria-labelledby="guide-title">
+        <h2 id="guide-title">Prompt 组合规则</h2>
+        <div class="prompt-rules">
+          <div class="prompt-rule"><strong>统一目标</strong><br>先固定每组图必须表达的技术含义和边界。</div>
+          <div class="prompt-rule"><strong>扁平科普</strong><br>优先结构清晰、数据流明确和正文阅读效率。</div>
+          <div class="prompt-rule"><strong>黏土 3D</strong><br>把系统与流程转化为可触摸的微缩装置和场景。</div>
+          <div class="prompt-rule"><strong>手绘水彩</strong><br>用动作、因果和视觉叙事解释同一技术观点。</div>
+        </div>
+      </section>
+
+      <nav class="gallery-toc" id="gallery-toc" aria-label="插画目录"></nav>
+      <div id="gallery"></div>
+    </main>
+
+    <footer class="footer">
+      <span>Robotics CAP TechBlog</span>
+      <a href="./">Articles</a>
+    </footer>
+
+    <noscript>此页面需要 JavaScript 来组合并显示完整 Prompt。</noscript>
+    <script>
+      const GLOBAL_PROMPT = `Use case: scientific-educational.
+Asset type: 16:9 horizontal editorial illustration for a robotics technology blog.
+Use generic unbranded robots and technically coherent relationships.
+Do not force a four-panel layout. Choose a continuous scene, workflow, layered system, loop, comparison, or selective storyboard according to the concept.
+Do not use titles, explanatory captions, decorative labels, speech balloons, logos, watermarks, or stray glyphs.
+Text may appear only when it is actual task input, executable code, a tool call, a structured record, or an evaluation value explicitly required by the content prompt. Render all required text exactly.
+Do not depict route hypotheses as completed benchmark results.`;
+
+      const STYLES = {
+        flat: {
+          label: "A · 扁平科普",
+          prompt: `Style: polished flat educational cartoon, bold clean outlines, simple geometric forms, crisp vector-like raster rendering.
+Palette: clean blue and orange, neutral gray machinery, restrained green for safe or successful states, red for important focal objects.
+Prioritize structural clarity, explicit data flow, and readability at blog width.`
+        },
+        clay: {
+          label: "B · 黏土 3D",
+          prompt: `Style: premium handcrafted claymation, rounded toy-like forms, tactile polymer-clay texture, softly modeled educational 3D cartoon.
+Palette: pale blue, warm orange, neutral gray, soft cream surroundings.
+Use connected miniature dioramas, layered clay machinery, or one staged system scene.
+Lighting: soft studio lighting with gentle shadows.`
+        },
+        sketch: {
+          label: "C · 手绘水彩",
+          prompt: `Style: expressive pencil linework, warm ink contours, sparse watercolor washes, subtle paper texture, polished editorial storytelling.
+Palette: graphite, muted blue-gray, warm orange accents, restrained green.
+Use a visual narrative, layered sketch, or selective storyboard only where it improves the explanation.`
+        }
+      };
+
+      const concepts = [
+        {
+          id: "01",
+          slug: "mainstream-pipeline",
+          title: "主流机器人学习流水线",
+          goal: "用红杯任务说明当前主流流水线：人类示范形成数据，模型接收视觉与文本指令，直接预测动作或 Action Chunk，最后根据任务结果评测。该图是后续 CAP 对照的基线，不能提前加入策略代码。",
+          prompts: {
+            flat: `Create a clear left-to-right workflow. A human safely teleoperates a robot arm to place a bright red cup into a gray tray. Multiple demonstration snapshots enter a policy-training machine. The trained model receives two distinct inputs: a camera image of the red cup and a task-instruction card. Its direct output is a short sequence of robot poses leading to the placement. A green check indicates successful task evaluation.\n\nRequired text:\n"把红杯放进托盘"\n\nPreserve the same red cup, tray, and robot throughout. Do not show policy code in this baseline.`,
+            clay: `Build connected clay scenes showing a human teleoperation demonstration, accumulated red-cup examples entering a training machine, a camera tile and a separate instruction card entering the trained model, and a short clay motion track coming directly out of the model to control the robot.\n\nRequired text:\n"把红杯放进托盘"\n\nEnd with the cup in the tray and a green success marker. Do not include an intermediate code layer.`,
+            sketch: `Draw a flowing visual narrative: a human demonstrates the red-cup task, repeated sketches become training data, the learned model receives a camera observation and a written instruction, and the model directly emits a short motion sequence that the robot follows.\n\nRequired text:\n"把红杯放进托盘"\n\nUse motion traces to make the direct observation-to-action relationship clear. Do not include strategy code.`
+          }
+        },
+        {
+          id: "05",
+          slug: "supervision-limits",
+          title: "主流监督的局限",
+          goal: "表现动作和最终结果容易监督，但目标选择、约束表达、工具选择与失败原因通常不直接暴露。公平呈现外围安全器仍然存在，限制在于主要策略过程不一定形成可监督的显式记录。",
+          prompts: {
+            flat: `Show an evaluator comparing a demonstrated robot trajectory with an executed trajectory and checking whether the cup reached the tray. Keep these outputs fully visible. Behind the policy, place an opaque internal chamber containing partially obscured representations of the chosen goal, safety constraint, tool choice, and failure cause. Show normal external sensors and a stop controller outside the chamber. Emphasize visible action supervision versus limited access to intermediate policy decisions. Use icons and visual relationships only; no explanatory text.`,
+            clay: `Create a clay inspection station where an evaluator can compare two visible motion tracks and the final task result. Behind it, use locked clay compartments containing a target token, safety-boundary token, tool token, and broken recovery token. Keep external sensors and a safety stop visibly active so the image does not imply that baseline systems have no safety mechanisms.`,
+            sketch: `Draw an evaluator holding visible action traces and a final success-or-failure result. Inside a dark policy silhouette, obscure the selected target, constraint, tool decision, and point of failure. Add lightly drawn external sensors and a safety stop. The contrast should communicate that output supervision is possible while intermediate reasoning remains difficult to label directly.`
+          }
+        },
+        {
+          id: "06A",
+          slug: "agent-code-output",
+          title: "多模态 Agent：视觉、文本进入，代码输出",
+          goal: "CAP 核心总览：模型以 Agent 形式直接理解视觉与文本，主输出不是动作轨迹，而是可执行策略代码；代码随后调用受约束机器人接口。",
+          prompts: {
+            flat: `Place a multimodal Agent at the center. Feed it a camera image showing a red cup and a separate task card reading exactly "把红杯放进托盘". The Agent's primary output is a readable executable code sheet, not a trajectory. Show exactly these code lines: "target = observe(image)" then "chunk = arm.move_to(target)" then "check(chunk)". The code calls a constrained robot action interface, which produces a short local movement. Make explicit: the Agent understands visual and text inputs; code is the model output; physical action comes from called interfaces. No other text.`,
+            clay: `Create a central clay multimodal Agent receiving a camera-image tile and a separate clay task card reading exactly "把红杯放进托盘". The Agent produces a physical clay code strip containing exactly "target = observe(image)", "chunk = arm.move_to(target)", and "check(chunk)". The code strip plugs into a constrained robot-action machine, which creates a short movement track. Do not show the Agent directly emitting motor signals.`,
+            sketch: `Draw a multimodal Agent reading both a camera observation of a red cup and a written instruction reading exactly "把红杯放进托盘". From the Agent emerges a short executable program with exactly "target = observe(image)", "chunk = arm.move_to(target)", and "check(chunk)". The program calls a separate action interface that moves the robot. Make code visibly the primary model output.`
+          }
+        },
+        {
+          id: "06B",
+          slug: "agent-tools-history",
+          title: "Agent 工具调用、专用模型与历史观测",
+          goal: "Agent 可以直接理解当前视觉，也可以调用专用视觉模型、几何模块或历史观测工具，再根据结构化返回结果修改代码与下一步行动。",
+          prompts: {
+            flat: `Show one central coding Agent with three tool sockets: a live camera observation, a specialized visual-processing model examining difficult geometry, and an observation-history store with earlier views and results. Show the Agent choosing among them and receiving structured results that update strategy code before execution. Render exactly these calls and no other text: "observe_current()", "vision_tool(image)", "observe_history()". Specialist tools support but do not replace the Agent.`,
+            clay: `Build a clay Agent workbench connected to a live camera, a specialized vision machine, and a carousel of historical observations. The Agent inserts tool-call tokens, receives structured result pieces, and rearranges its clay code plan. Render exactly: "observe_current()", "vision_tool(image)", "observe_history()".`,
+            sketch: `Draw an Agent over an evolving code plan, surrounded by a live camera view, a specialist vision model examining a difficult crop or 3D orientation, and an archive of previous observations and failed attempts. Selected results flow back and change the next decision. Render exactly: "observe_current()", "vision_tool(image)", "observe_history()".`
+          }
+        },
+        {
+          id: "06C",
+          slug: "code-action-chunk",
+          title: "代码构建连续 Action Chunk",
+          goal: "Agent 代码调用规划器、插值函数或动作专家，把离散关键帧与约束转换为连续、短时 Action Chunk；连续模块负责局部平滑动作。",
+          prompts: {
+            flat: `Show strategy code selecting several local robot keyframes around a red-cup grasp and passing keyframes, safety constraints, and a short horizon into an interpolation function. Separated pose markers become one smooth continuous short Action Chunk. A fast controller executes it and returns sensor feedback. Render exactly these code lines and no other text: "keyframes = plan_grasp(target)", "chunk = interpolate_action(keyframes, horizon=\"short\")", "execute(chunk)". Do not show code specifying every motor command.`,
+            clay: `Create a clay code machine placing discrete robot-pose tokens and safety-boundary pieces into a smooth interpolation device. It produces one short flexible clay motion ribbon toward a red cup; small fast control gears handle physical execution. Render exactly: "keyframes = plan_grasp(target)", "chunk = interpolate_action(keyframes, horizon=\"short\")", "execute(chunk)".`,
+            sketch: `Draw an Agent code plan containing selected keyframes and safety boundaries. The pose sketches enter an interpolation function and become a smooth watercolor motion stroke; the stroke is short and followed by a new observation. Render exactly: "keyframes = plan_grasp(target)", "chunk = interpolate_action(keyframes, horizon=\"short\")", "execute(chunk)".`
+          }
+        },
+        {
+          id: "10",
+          slug: "supervision-endpoints",
+          title: "显式监督端点",
+          goal: "展示代码执行中的目标、观察、工具调用、代码分支、Action Chunk、检查、恢复和失败原因，并区分仿真 GT、规则、传感器与模型判断。",
+          prompts: {
+            flat: `Show a strategy-code execution timeline with explicit visual checkpoints for target selection, current observation, tool call, code branch, generated Action Chunk, result check, recovery decision, and failure cause. Each checkpoint emits a compact structured record into an organized training dataset. Visually distinguish simulator ground truth, deterministic rule results, sensor evidence, and model judgments using shape and color only. Do not represent records as prose logs. No text.`,
+            clay: `Build a clay code-execution path with physical inspection gates for target, observation, tool call, branch choice, Action Chunk, result, recovery, and failure. At every gate, a structured token is stamped into a divided record tray. Use distinct clay materials for simulator ground truth, rules, sensors, and model judgments. No text.`,
+            sketch: `Draw executable strategy code as a visual path through checkpoints. Attach consistent evidence cards for target, observation, tool result, branch, Action Chunk, outcome, recovery, and failure. Route simulator truth, deterministic checks, physical sensor evidence, and model estimates into visibly different ledger sections. Use symbols, not written labels.`
+          }
+        },
+        {
+          id: "11A",
+          slug: "sim-training-loop",
+          title: "完全在仿真中的训练闭环",
+          goal: "把任务生成、代码生成、执行、判分、纠错、恢复样本生成和下一轮训练完整放在仿真中；真机仅作为闭环外的后续验证目标。",
+          prompts: {
+            flat: `Create a fully closed simulation-training loop inside a clearly bounded virtual environment: simulator generates a robot task and rendered scene; a multimodal Agent receives image and task-card inputs; Agent outputs a visible code artifact; code calls simulated action interfaces; simulator executes a short Action Chunk and exposes results; evaluator scores code steps, constraints, recovery, and final outcome; structured records return to retrain the Agent. Show a separate real robot outside the loop only as a later evaluation target, not a training-data source. Use symbols and arrows, no explanatory text.`,
+            clay: `Build a transparent clay simulation dome containing the entire training factory: scene generation, camera rendering, task input, coding Agent, simulated action tools, robot execution, evaluator, structured record storage, and retraining. Connect every station into a closed circular conveyor. Place a physical robot outside the dome behind a future evaluation gate, without feeding data back into training. No text.`,
+            sketch: `Draw a complete circular training ecosystem inside a simulated world. Virtual tasks produce observations; an Agent writes a code sheet; code calls simulated actions; simulator reveals results; evaluators create structured supervision; records train the next Agent iteration. Make the loop continuous and self-contained. Draw the real robot outside as a later validation destination. No text.`
+          }
+        },
+        {
+          id: "11B",
+          slug: "sim-ground-truth",
+          title: "仿真 GT 与渐进式训练",
+          goal: "仿真暴露 3D mesh、精确位姿、接触点、碰撞、可见性、成功条件和失败原因，用于生成代码标签与课程，并逐步撤除训练脚手架。",
+          prompts: {
+            flat: `Show a simulated red-cup scene surrounded by icon-only ground-truth layers: target-object 3D mesh, exact 6D pose axes, grasp and contact points, collision geometry, visibility and occlusion, task-success state, and failure-cause record. These layers automatically generate a simple reference strategy program and structured supervision. Then show a three-stage curriculum where simulator hints progressively disappear until only deployment-compatible observations remain. Render exactly and only: "mesh = sim.get_mesh(target)", "pose = sim.get_pose(target)", "grasp = plan(mesh, pose)".`,
+            clay: `Create a clay simulator exposing truth pieces around a red cup: wireframe-like mesh shell, pose axes, grasp points, collision boundaries, visibility panels, success and failure tokens. These feed a machine building a code strip. Show three curriculum stations where direct truth assistance progressively decreases. Render exactly: "mesh = sim.get_mesh(target)", "pose = sim.get_pose(target)", "grasp = plan(mesh, pose)".`,
+            sketch: `Draw a simulated red cup with transparent overlays for 3D mesh, exact pose, contact points, collision geometry, occlusion, success state, and failure cause. The overlays produce a simple reference program, then fade across a gradual curriculum while rendered observations and learned tool calls take over. Render exactly: "mesh = sim.get_mesh(target)", "pose = sim.get_pose(target)", "grasp = plan(mesh, pose)".`
+          }
+        },
+        {
+          id: "11C",
+          slug: "code-sim-to-real",
+          title: "代码为什么可能缓解 sim-to-real gap",
+          goal: "代码学习抽象求解过程与工具调用，而不是固定像素或轨迹；仿真与真机共享有类型接口，但仍保留需要校准和验证的 gap。",
+          prompts: {
+            flat: `Show the same short strategy program spanning a simulator on the left and a physical robot on the right through one shared typed interface while execution backends differ. In simulation, rich ground truth supervises whether code selected the correct object, constraints, and recovery; at deployment only real camera and sensor observations enter. Render exactly: "observe()", "plan_grasp(target)", "make_action_chunk(path)", "verify_result()". Draw code as a promising but unfinished bridge, leaving a visible remaining gap requiring calibration and real-world evaluation.`,
+            clay: `Build two clay platforms separated by a visible gap: simulation and real robot. A reusable clay code bridge connects matching typed tool sockets. Simulator truth tokens feed an evaluator but do not cross into deployed policy input. Keep the bridge visibly under testing. Render exactly: "observe()", "plan_grasp(target)", "make_action_chunk(path)", "verify_result()".`,
+            sketch: `Draw one compact strategy program above two worlds: simulator and physical robot workspace. It connects to both through the same interface calls. In simulation hidden truth supervises code from outside; in the real world only camera and sensor observations enter. Make the code bridge promising but unfinished. Render exactly: "observe()", "plan_grasp(target)", "make_action_chunk(path)", "verify_result()".`
+          }
+        },
+        {
+          id: "12",
+          slug: "ar-strategy-training",
+          title: "AR 原生策略训练",
+          goal: "高层策略自回归地逐步生成目标、观察、工具调用、检查与恢复代码；后一步依赖已有代码和执行历史，AR 不直接生成高频电机信号。",
+          prompts: {
+            flat: `Show a high-level strategy program generated one explicit step at a time: goal, observation call, tool call, result check, recovery branch. Each new code block visibly depends on existing code and returned execution history. The approved local step calls a constrained action interface below; a separate fast controller handles motor execution. Use code-like blocks and symbols without readable words.`,
+            clay: `Create a clay strategy machine laying down one connected code tile after another for goal, observation, tool, check, and recovery. Returned history tokens re-enter before the next tile. Only the active local tile passes into a constrained action machine; small fast gears below handle continuous physical control. No text.`,
+            sketch: `Draw a strategy program unfolding progressively. Each new code-like line appears after the previous tool result or observation joins visible history. Below, a narrow action interface converts the current local decision into a short movement while a separate fast feedback loop stabilizes the robot. Use symbols, not readable labels.`
+          }
+        },
+        {
+          id: "13",
+          slug: "continuous-tools",
+          title: "连续生成模型的职责边界",
+          goal: "上层 Agent 生成策略代码，代码把 Flow Matching、Diffusion、插值器和运动规划器作为可替换工具，用来生成局部 Action Chunk。",
+          prompts: {
+            flat: `Place a coding Agent in the upper layer outputting strategy code for goal, constraints, observation schedule, and recovery. The code selects among four lower continuous-action specialists visualized distinctly: smooth flow-field generator, iterative denoising action expert, keyframe interpolation, and geometric motion planner. Each produces a short local Action Chunk through the same constrained interface and returns evidence. Present them as interchangeable tools, not competing owners of strategy. No text.`,
+            clay: `Create an upper clay Agent desk producing a strategy code strip. Below, arrange four specialist motion machines: flowing clay, iterative refinement pieces, smooth interpolation rails, geometric path planning. The code plugs into one selected machine producing a short Action Chunk; all tools return results through the same socket. No text.`,
+            sketch: `Draw an upper executable strategy map calling one of four lower motion specialists: flowing continuous fields, iterative refinement, keyframe interpolation, geometric planning. Each specialist produces only a local motion segment and returns execution evidence. Show cooperation under one shared code interface. No text.`
+          }
+        },
+        {
+          id: "14",
+          slug: "agent-execution-repair",
+          title: "Agent 形式的代码执行与修复",
+          goal: "重点表现 Agent 的运行过程：执行代码、调用工具、观察历史、发现失败、定位分支、局部修改并继续，而不是一次生成静态程序。",
+          prompts: {
+            flat: `Show a live coding Agent executing strategy code, calling observation and action tools, receiving a failed result, opening visual observation history, identifying one responsible code branch, editing only that branch, and safely resuming. Keep unchanged program blocks visibly intact. The robot pauses behind a safety gate during diagnosis. Render exactly these calls and no other text: "observe_history()", "check(result)", "retry()", "replan()".`,
+            clay: `Build a clay Agent workbench with an executable code path. A failed action returns a red result token. The Agent retrieves earlier observation tokens, opens the failed branch, replaces one clay command segment, and reconnects the path. Robot remains behind a closed safety gate until repair. Render exactly: "observe_history()", "check(result)", "retry()", "replan()".`,
+            sketch: `Draw an Agent following an executable strategy trail. A failed grasp interrupts it; the Agent looks through earlier camera sketches, finds the incorrect branch, crosses out only that section, inserts a recovery call, and continues. Emphasize iterative repair and persistent history. Render exactly: "observe_history()", "check(result)", "retry()", "replan()".`
+          }
+        },
+        {
+          id: "17",
+          slug: "parallel-agent-tools",
+          title: "并行 Agent 与工具模块协作",
+          goal: "主 Agent 并行调用视觉、几何、路径、安全、动作和审计工具；模块通过结构化返回值协作，安全与审计拥有阻断权限。",
+          prompts: {
+            flat: `Place a central coding Agent coordinating parallel specialist modules for visual analysis, 3D geometry, path planning, safety checking, Action Chunk generation, and code auditing. Structured results return before the Agent commits the next code branch. Safety and audit paths have explicit stop gates capable of blocking execution. Agent output remains executable code while modules are callable capabilities. Use symbols only, no text.`,
+            clay: `Create a circular clay Agent control room. A central code desk sends tool-call tokens in parallel to stations for vision, geometry, path planning, safety, Action Chunk generation, and audit. Structured results return through dedicated sockets. Safety and audit stations control physical gates that can stop outgoing code. No text.`,
+            sketch: `Draw a central Agent writing strategy code while specialist processes run in parallel around it: difficult visual analysis, geometry reconstruction, route solving, safety review, local motion generation, and code audit. Each returns structured evidence; Agent combines results into the next branch; safety or audit can close the execution gate. No text.`
+          }
+        },
+        {
+          id: "19",
+          slug: "costs-prerequisites",
+          title: "CAP 的成本与成立前提",
+          goal: "集中呈现 Agent 延迟、代码正确性、工具接口、仿真 GT 依赖、课程撤除、仿真真实性和真机迁移等尚未解决的工程风险。",
+          prompts: {
+            flat: `Show a CAP coding-Agent system approaching real deployment while facing seven unresolved engineering hurdles represented visually: a heavy clock for Agent deliberation latency; a flawed or unsafe code branch; mismatched tool connectors; simulator-ground-truth crutches supporting the Agent; a curriculum ramp whose assistance is removed too quickly; a virtual physics scene visibly mismatched with reality; and a remaining broken sim-to-real bridge. Engineers measure and test every hurdle. The final real-robot deployment gate remains closed pending validation. Use symbols only.`,
+            clay: `Create a clay CAP system traveling from simulation toward real deployment while confronting seven physical obstacles: heavy slow clock, flawed code strip with a broken branch, mismatched tool adapters, simulator-truth crutches, curriculum ramp with missing supports, fragile unrealistic virtual physics model, unfinished bridge to real hardware. Small engineering figures test and repair the route. Do not show completed victory. No text.`,
+            sketch: `Draw the CAP route as an unfinished engineering expedition. A coding Agent encounters latency, code faults, tool-interface failures, dependence on simulator truth, difficulty removing training scaffolds, inaccurate virtual physics, and residual transfer errors. Show measurement, audits, staged curriculum tests, and final real-world validation ahead. Keep the destination conditional and unfinished. Use visual symbols only.`
+          }
+        }
+      ];
+
+      const toc = document.querySelector("#gallery-toc");
+      const gallery = document.querySelector("#gallery");
+
+      function fullPrompt(style, content) {
+        return `${GLOBAL_PROMPT}\n\n${STYLES[style].prompt}\n\nPrimary request:\n${content}`;
+      }
+
+      concepts.forEach((concept) => {
+        const anchor = `concept-${concept.id.toLowerCase()}`;
+        const tocLink = document.createElement("a");
+        tocLink.href = `#${anchor}`;
+        tocLink.textContent = `${concept.id} · ${concept.title}`;
+        toc.append(tocLink);
+
+        const section = document.createElement("section");
+        section.className = "concept-section";
+        section.id = anchor;
+
+        const heading = document.createElement("div");
+        heading.className = "concept-heading";
+        heading.innerHTML = `<div class="concept-number">${concept.id}</div><div><h2>${concept.title}</h2><p class="concept-goal">${concept.goal}</p></div>`;
+        section.append(heading);
+
+        const grid = document.createElement("div");
+        grid.className = "illustration-grid";
+
+        ["flat", "clay", "sketch"].forEach((style) => {
+          const prompt = fullPrompt(style, concept.prompts[style]);
+          const card = document.createElement("article");
+          card.className = "illustration-card";
+
+          const img = document.createElement("img");
+          img.className = "illustration-image";
+          img.src = `../assets/illustrations/robotics-cap-points/${concept.id.toLowerCase()}-${concept.slug}-${style}.png`;
+          img.alt = `${concept.title}，${STYLES[style].label}`;
+          img.loading = "lazy";
+          img.decoding = "async";
+
+          const copy = document.createElement("div");
+          copy.className = "illustration-copy";
+
+          const styleLine = document.createElement("div");
+          styleLine.className = "style-line";
+          styleLine.innerHTML = `<h3>${STYLES[style].label}</h3><span class="style-badge">${style}</span>`;
+
+          const details = document.createElement("details");
+          details.className = "prompt-details";
+          const summary = document.createElement("summary");
+          summary.textContent = "查看完整 Prompt";
+          const pre = document.createElement("pre");
+          pre.textContent = prompt;
+          const button = document.createElement("button");
+          button.className = "copy-prompt";
+          button.type = "button";
+          button.textContent = "复制 Prompt";
+          button.addEventListener("click", async () => {
+            await navigator.clipboard.writeText(prompt);
+            button.textContent = "已复制";
+            window.setTimeout(() => { button.textContent = "复制 Prompt"; }, 1400);
+          });
+
+          details.append(summary, pre, button);
+          copy.append(styleLine, details);
+          card.append(img, copy);
+          grid.append(card);
+        });
+
+        section.append(grid);
+        gallery.append(section);
+      });
+    </script>
+  </body>
+</html>

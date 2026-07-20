@@ -1,62 +1,60 @@
 # Robotics CAP TechBlog
 
-这是一个极简 GitHub Pages 技术博客。当前站点保留两篇公开路线文章：
+这个仓库同时保存 Robotics CAP 文章的写作过程与公开站点。内容按三个阶段组织：
 
-- `index.html`：博客首页，突出第一篇主文。
-- `ideas/index.html`：文章索引。
-- `ideas/capx-2026-route.html`：主文《为什么 CapX 式策略代码会是 2026 年最值得押注的机器人路线》。
-- `ideas/cap-ar-native-training.html`：文章《CAP 为什么应该坚持 AR 原生训练》。
-- `docs/outlines/capx-route-full-outline.md`：主文的富提纲来源。
+1. `work/<article-id>/`：问题定义、提纲、证据边界、未决问题和迭代记录。
+2. `candidates/<article-id>/` 与 `reviews/<article-id>/`：候选稿、多视角评审和选择决策。
+3. `site/`：唯一公开发布面，只包含 canonical 文章及站点资源。
 
-这个仓库不再维护项目门户、路线图、概念书、预览目录或旧拆分 idea 页面。后续只有当主文需要真正形成系列论证时，才新增文章页。
+完整流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。工作材料会进入 Git 历史，但不会被 GitHub Pages 部署；如果仓库本身是 public，这些材料仍然可从源码中看到。
 
-## 本地预览
+## 当前内容
 
-使用固定脚本在后台启动本地服务。命令结束后，预览仍会继续运行：
+- `site/ideas/mainstream-robotics-vs-cap.html`：主流机器人操作流水线与 CAP 的大众介绍。
+- `site/ideas/capx-2026-route.html`：CapX 路线主文。
+- `site/ideas/cap-ar-native-training.html`：CAP AR 原生训练 canonical 文章。
+- `candidates/cap-ar-native-training/`：该文章的三个历史候选版本。
+- `work/` 与 `reviews/`：文章形成过程和评审决策。
+
+## 开始一篇文章
 
 ```bash
-./scripts/review.sh
+./scripts/new-article.sh my-article-id
 ```
 
-打开：
+脚本只创建阶段目录和空白模板，不生成文章正文。`article-id` 必须使用小写 kebab-case。
+
+## 验证与预览
+
+```bash
+./scripts/validate.sh
+./scripts/preview.sh
+```
+
+预览地址默认为：
 
 ```text
 http://127.0.0.1:4000/robotics-cap/
 ```
 
-如果 4000 端口被占用，可以换一个端口：
+服务在后台运行。可使用 `status`、`restart`、`stop` 管理，例如：
 
 ```bash
-./scripts/review.sh 8080
+./scripts/preview.sh status
+./scripts/preview.sh stop
 ```
 
-查看状态、重启或停止服务：
-
-```bash
-./scripts/review.sh status
-./scripts/review.sh restart
-./scripts/review.sh stop
-```
-
-指定端口时，将端口放在操作之后，例如 `./scripts/review.sh stop 8080`。
-
-## 默认收尾
-
-完成一次内容或样式改动后，默认收尾顺序是：
-
-1. 验证静态页面可以正常预览。
-2. 提交本次改动。
-3. 在后台重新启动或复用本地预览服务。
-4. 在浏览器打开预览地址，让最后看到的是可阅读页面，而不是只停在提交结果。
+本地预览与线上发布的边界不同：根路径显示正式站点，`_workspace/` 提供本地 review 索引，可以查看 `work/`、`candidates/` 和 `reviews/` 中的已提交材料。GitHub Pages 仍只部署 `site/`。
 
 ## 发布
 
-项目使用最简单的 GitHub Pages 发布流程：推送到 `main` 后，由 GitHub Pages 从主分支根目录发布静态文件。
-
-运行：
+`main` 上的 GitHub Actions 只部署 `site/`：
 
 ```bash
-./scripts/publish.sh "Publish Robotics CAP TechBlog"
+./scripts/publish.sh
+git add -A
+git commit -m "Publish article"
+git push origin main
 ```
 
-脚本会暂存博客所需文件、创建提交并推送到 `origin/main`。
+`publish.sh` 只做发布前验证，不会自动暂存、提交或推送。
