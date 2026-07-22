@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · RL 与 Teacher 冷启动</title>
-    <meta name="description" content="Code as Runtime 的自回归 trace RL、verifier、progress reward，以及使用仿真 privileged teacher 构造冷启动轨迹的方法。">
+    <title>Code as Runtime · Runtime Trace RL</title>
+    <meta name="description" content="Code as Runtime 的完整 RL 形态：自回归 runtime rollout、可执行 trace、verifier、progress reward、信用分配与冷启动。">
     <link rel="stylesheet" href="styles.css?v=training-note">
   </head>
   <body class="training-page">
@@ -13,23 +13,24 @@
       <nav class="series-nav" aria-label="Code as Runtime 系列文章">
         <a href="./">01 Runtime</a>
         <a href="context.html">02 Context</a>
-        <a class="active" href="training.html">03 Training</a>
+        <a class="active" href="training.html">03 Runtime RL</a>
+        <a href="data.html">04 Real-data SFT</a>
       </nav>
     </header>
 
     <main class="candidate-shell training-shell">
       <header class="candidate-hero compact training-hero">
-        <p class="eyebrow">Code as Runtime · Training note · 03</p>
-        <h1>先用 Teacher 写出可行 trace。<br>再让 RL 学会改进它。</h1>
-        <p class="lead">Code as Runtime 不把训练目标压缩成一次动作预测。主 Agent 自回归地产生 decision、代码、工具调用、检查与恢复；runtime 执行这些输出，verifier 再沿整条 trace 提供 outcome、progress 和过程奖励。冷启动的关键，是逐步构造能够执行、能够归因，也能够撤掉脚手架的 teacher。</p>
+        <p class="eyebrow">Code as Runtime · Runtime Trace RL · 03</p>
+        <h1>在 Runtime 中 rollout。<br>沿完整 trace 做 RL。</h1>
+        <p class="lead">Code as Runtime 的 RL 对象不是单步 action，也不是一段脱离执行的文本，而是主 Agent 与 runtime 共同产生的可执行轨迹：读取 observation、选择 decision、写代码、调用工具、修改 Action Queue、检查结果并在失败后恢复。环境持续执行，verifier 沿 trace 的关键端点提供 outcome、progress、约束与成本信号；teacher 只负责把策略带到能够开始 on-policy 探索的位置。</p>
       </header>
 
       <article class="training-article">
         <section class="training-section" aria-labelledby="rl-shape-heading">
           <header class="section-intro">
-            <p class="eyebrow">01 · RL shape</p>
+            <p class="eyebrow">01 · Optimization object</p>
             <h2 id="rl-shape-heading">训练对象是一条可执行 trace，<br>不只是最后一段动作。</h2>
-            <p>它更像 Code Agent 的训练闭环：模型写出下一段 token，环境执行代码与工具，verifier 读取结构化结果，再把奖励归因到目标、观察、约束、调用、验证和恢复等决策端点。</p>
+            <p>它更像可执行 Code Agent 的训练闭环：模型自回归写出下一个 runtime decision，环境执行代码、工具与动作，新的 observation 再回到上下文。RL 优化的是这条跨越多轮的闭环策略，而不只是最终动作是否碰巧成功。</p>
           </header>
 
           <figure class="trace-loop" aria-label="Code as Runtime 的自回归强化学习闭环">
@@ -78,26 +79,26 @@
 
         <section class="training-section" aria-labelledby="teacher-heading">
           <header class="section-intro">
-            <p class="eyebrow">03 · Teacher curriculum</p>
-            <h2 id="teacher-heading">Teacher 不是一个模型，<br>而是一组逐步撤除的权限。</h2>
-            <p>冷启动时可以让不同 teacher 分别负责求解、轨迹投影、批改和制造失败。课程的目标不是永远依赖更强 teacher，而是让 privileged intervention rate 持续下降，直到部署时只剩普通 observation 与 runtime API。</p>
+            <p class="eyebrow">03 · Rollout and optimization loop</p>
+            <h2 id="teacher-heading">每轮 RL 都要经过执行，<br>而不是只批改生成文本。</h2>
+            <p>一轮训练从可重放的 runtime state 开始，采样 Agent decision，执行产生真实 observation，再由独立 verifier 写回奖励与失败端点。SFT 和 privileged solver 只提供初始状态分布；主要数据随后应逐步转向 on-policy rollout。</p>
           </header>
 
           <div class="teacher-ladder">
-            <article><span>00</span><div><small>SCHEMA TEACHER</small><h3>固定输出契约</h3><p>用少量人工模板定义 decision、代码、tool result、verification 和 recovery 的可解析 trace。</p></div><b>SFT</b></article>
-            <article><span>01</span><div><small>PRIVILEGED SOLVER</small><h3>先保证任务可完成</h3><p>读取仿真 GT、mesh、接触和碰撞信息，产生高成功率解与精确失败原因。</p></div><b>ORACLE</b></article>
-            <article><span>02</span><div><small>TRACE PROJECTOR</small><h3>投影成部署形态</h3><p>把 oracle 解转换为 observation、工具调用和 runtime code；保留 privileged provenance 与残差。</p></div><b>DISTILL</b></article>
-            <article><span>03</span><div><small>OBSERVATION TEACHER</small><h3>撤掉 GT 输入</h3><p>只使用渲染图像、proprio、force/tactile 和部署时存在的 helper，模仿投影轨迹。</p></div><b>IMITATE</b></article>
-            <article><span>04</span><div><small>VERIFIER RL</small><h3>让 on-policy trace 自我扩展</h3><p>端点注错、候选采样、执行判分与恢复训练，逐步覆盖 teacher 未写过的分支。</p></div><b>RL</b></article>
-            <article><span>05</span><div><small>REAL-ROBOT CALIBRATION</small><h3>只用真机校正剩余 gap</h3><p>用受限预算验证感知、接触、延迟和 handler 行为，不把仿真成功直接当成现实结论。</p></div><b>DEPLOY</b></article>
+            <article><span>00</span><div><small>INITIAL STATE</small><h3>从可重放 runtime snapshot 开始</h3><p>加载任务、因果 observation、Action Queue、active handlers 与最近事件；状态接口和部署时一致。</p></div><b>RESET</b></article>
+            <article><span>01</span><div><small>POLICY SAMPLE</small><h3>自回归生成下一次 decision</h3><p>采样 CONTINUE、analysis、代码、action call 或 handler update，而不是直接读取 oracle action。</p></div><b>ACT</b></article>
+            <article><span>02</span><div><small>RUNTIME EXECUTION</small><h3>让输出真正产生后果</h3><p>运行代码、消费 Action Queue、触发 handler，并把 stdout、异常、传感器与进度写回 trace。</p></div><b>STEP</b></article>
+            <article><span>03</span><div><small>VERIFIER PASS</small><h3>在结构化端点判分</h3><p>独立检查 outcome、状态进展、安全约束、调用有效性、恢复质量与 runtime cost。</p></div><b>GRADE</b></article>
+            <article><span>04</span><div><small>CREDIT ASSIGNMENT</small><h3>把奖励落到相关决策</h3><p>结合 terminal return、progress difference 和端点标签，区分观察错误、代码错误与执行失败。</p></div><b>UPDATE</b></article>
+            <article><span>05</span><div><small>CURRICULUM MIX</small><h3>扩展状态与失败分布</h3><p>混合成功、恢复、异常注入与真机校准 rollout，逐步降低离线示教和 privileged intervention 比例。</p></div><b>EXPAND</b></article>
           </div>
         </section>
 
         <section class="training-section" aria-labelledby="projection-heading">
           <header class="section-intro narrow">
-            <p class="eyebrow">04 · Privileged trace projection</p>
+            <p class="eyebrow">04 · Cold start: privileged projection</p>
             <h2 id="projection-heading">可以借用真值完成任务，<br>不能伪造真值的来源。</h2>
-            <p>仿真 GT 很适合产生动作与检查标签，但如果 trace 声称一个视觉系统推导出了它从未看到的精确量，就会制造不可部署的因果捷径。正确目标是 deployment-shaped trace，而不是删除 provenance。</p>
+            <p>在策略尚不能稳定 rollout 时，仿真 GT 可以提供可行解与检查标签，作为 RL 之前的冷启动手段。但如果 trace 声称视觉系统推导出了它从未看到的精确量，就会制造不可部署的因果捷径。正确目标是 deployment-shaped initialization，而不是让 oracle 长期替代 on-policy 探索。</p>
           </header>
 
           <div class="grasp-projection">
@@ -147,14 +148,14 @@ record(privileged=true,
 
         <section class="training-section" aria-labelledby="artifact-teacher-heading">
           <header class="section-intro">
-            <p class="eyebrow">05 · Runtime artifact teachers</p>
-            <h2 id="artifact-teacher-heading">不只示教“做什么”，<br>还要示教 runtime 应该怎样写。</h2>
-            <p>同一任务可以有多种正确 Action 输出和 handler 实现。仿真允许 teacher 批量生成候选代码、执行单元测试、注入异常并选择多样化解，从而避免主 Agent 只学会一种僵硬模板。</p>
+            <p class="eyebrow">05 · Runtime action space</p>
+            <h2 id="artifact-teacher-heading">RL 不只探索“做什么”，<br>也探索 runtime 应该怎样写。</h2>
+            <p>同一任务可以有多种正确 Action 输出和 handler 实现。rollout 可以采样候选代码、执行单元测试、注入异常，再由 verifier 比较成功率、恢复能力和运行成本，从而避免主 Agent 被固定在一种僵硬模板里。</p>
           </header>
 
           <div class="artifact-matrix">
             <div class="artifact-card action">
-              <small>ACTION BUILDER TEACHER</small><h3>正常任务动作</h3>
+              <small>ACTION BUILDER CANDIDATES</small><h3>正常任务动作</h3>
               <pre><code># equivalent valid implementations
 queue.push(interpolate(keyframes))
 queue.push(plan_to_pose(goal))
@@ -162,7 +163,7 @@ queue.push(vla_primitive(goal, horizon=.8))</code></pre>
               <p>在相同 typed action contract 下，覆盖 interpolation、motion planner、learned primitive 与不同 queue mutation。</p>
             </div>
             <div class="artifact-card handler">
-              <small>HANDLER TEACHER</small><h3>事件与快速响应</h3>
+              <small>HANDLER CANDIDATES</small><h3>事件与快速响应</h3>
               <pre><code>@on_force(threshold=12.0)
 def guard(obs, queue):
     queue.truncate(after="inflight")
@@ -172,7 +173,7 @@ def guard(obs, queue):
             </div>
           </div>
 
-          <div class="handler-curriculum" role="img" aria-label="handler teacher 的异常注入课程">
+          <div class="handler-curriculum" role="img" aria-label="handler 的异常注入与执行判分流程">
             <span>normal rollout</span><i>→</i><span>inject slip / occlusion / delay</span><i>→</i><span>handler fires</span><i>→</i><span>queue mutation</span><i>→</i><span>verifier grades recovery</span>
           </div>
 
@@ -207,9 +208,9 @@ def guard(obs, queue):
 
         <section class="training-section closing-section" aria-labelledby="exit-heading">
           <header class="section-intro">
-            <p class="eyebrow">07 · Exit conditions</p>
-            <h2 id="exit-heading">Teacher 是否成功，<br>看它能否被撤掉。</h2>
-            <p>冷启动数据的价值不在 oracle rollout 本身，而在它是否让 observation-only policy 获得可复现能力。每一阶段都应该以撤除权限后的重新执行作为验收，而不是只比较离线 token loss。</p>
+            <p class="eyebrow">07 · RL acceptance conditions</p>
+            <h2 id="exit-heading">RL 是否有效，<br>看策略能否在执行中改善。</h2>
+            <p>主要验收对象是 observation-only policy 的 on-policy 表现，而不是 teacher rollout 或离线 token loss。除了最终成功率，还要检查 verifier 校准、恢复覆盖、策略熵、runtime 成本和真机迁移是否一起改善。</p>
           </header>
 
           <div class="exit-grid">
@@ -221,7 +222,7 @@ def guard(obs, queue):
             <div><b>Real-robot transfer</b><span>共享接口之后仍剩多少 perception、contact、latency 和 calibration gap？</span></div>
           </div>
 
-          <p class="closing-copy">这条路线的核心不是“用仿真真值伪造完美推理”，而是先让真值 teacher 找到可行解，再把解拆成可监督、可执行、可审计的 runtime trace；随后逐项撤掉 teacher 权限，让 verifier RL 接管剩余搜索。最终部署的 Agent 只能依靠它真正看得到的 observation，和它真正能够调用的代码与工具。</p>
+          <p class="closing-copy">这条 RL 路线的核心，是让 Agent 在与部署一致的 runtime 中持续产生、执行和修正 trace，再用可校准的 verifier 把环境后果归因到具体决策。teacher、仿真真值和 Magic Offset 都只是进入这个闭环的脚手架；真正被优化并最终部署的，是只依靠可见 observation 与可调用 runtime API 的 on-policy Agent。</p>
         </section>
       </article>
     </main>
