@@ -300,6 +300,36 @@ h3 {
   margin-top: 8px;
 }
 
+.article-figure {
+  margin: 30px 0;
+}
+
+.article-figure a {
+  display: block;
+  cursor: zoom-in;
+}
+
+.article-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  transition: opacity 160ms ease;
+}
+
+.article-figure a:hover img {
+  opacity: 0.96;
+}
+
+.article-figure figcaption {
+  max-width: 760px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
 .toc {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

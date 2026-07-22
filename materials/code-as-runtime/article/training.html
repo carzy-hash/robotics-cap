@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Code as Runtime · RL 与 Teacher 冷启动</title>
+    <meta name="description" content="Code as Runtime 的自回归 trace RL、verifier、progress reward，以及使用仿真 privileged teacher 构造冷启动轨迹的方法。">
+    <link rel="stylesheet" href="styles.css?v=training-note">
+  </head>
+  <body class="training-page">
+    <header class="candidate-nav">
+      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
+        <a href="./">01 Runtime</a>
+        <a href="context.html">02 Context</a>
+        <a class="active" href="training.html">03 Training</a>
+      </nav>
+    </header>
+
+    <main class="candidate-shell training-shell">
+      <header class="candidate-hero compact training-hero">
+        <p class="eyebrow">Code as Runtime · Training note · 03</p>
+        <h1>先用 Teacher 写出可行 trace。<br>再让 RL 学会改进它。</h1>
+        <p class="lead">Code as Runtime 不把训练目标压缩成一次动作预测。主 Agent 自回归地产生 decision、代码、工具调用、检查与恢复；runtime 执行这些输出，verifier 再沿整条 trace 提供 outcome、progress 和过程奖励。冷启动的关键，是逐步构造能够执行、能够归因，也能够撤掉脚手架的 teacher。</p>
+      </header>
+
+      <article class="training-article">
+        <section class="training-section" aria-labelledby="rl-shape-heading">
+          <header class="section-intro">
+            <p class="eyebrow">01 · RL shape</p>
+            <h2 id="rl-shape-heading">训练对象是一条可执行 trace，<br>不只是最后一段动作。</h2>
+            <p>它更像 Code Agent 的训练闭环：模型写出下一段 token，环境执行代码与工具，verifier 读取结构化结果，再把奖励归因到目标、观察、约束、调用、验证和恢复等决策端点。</p>
+          </header>
+
+          <figure class="trace-loop" aria-label="Code as Runtime 的自回归强化学习闭环">
+            <div class="loop-step primary"><small>CONTEXT</small><b>Observation + runtime state</b><span>图像、任务、Action Queue、active handlers、recent events</span></div>
+            <i aria-hidden="true">→</i>
+            <div class="loop-step agent"><small>AR AGENT</small><b>Next trace tokens</b><span>CONTINUE / analysis / code / action call / handler update</span></div>
+            <i aria-hidden="true">→</i>
+            <div class="loop-step runtime"><small>EXECUTION</small><b>Runtime + robot</b><span>运行代码、消费 Action Chunk、返回传感器与错误</span></div>
+            <i aria-hidden="true">→</i>
+            <div class="loop-step verify"><small>SUPERVISION</small><b>Verifier ensemble</b><span>outcome · progress · constraints · recovery · cost</span></div>
+            <div class="loop-return"><span>structured rollout + rewards</span></div>
+          </figure>
+
+          <div class="argument-grid">
+            <div><small>WHAT IS AUTOREGRESSIVE</small><h3>整个主策略接口</h3><p>每一轮输出都接在已有 trace 后面：观察请求、代码、工具结果、queue 决策、自检与恢复选择都成为下一 token 的条件。</p></div>
+            <div><small>WHAT IS NOT IMPLIED</small><h3>不要求逐 token 控制电机</h3><p>Action Chunk 仍可由规划器、插值器、VLA primitive 或连续动作专家生成；自回归对象是上层 runtime trace。</p></div>
+            <div><small>FAIR VLA COMPARISON</small><h3>区别在主要监督出口</h3><p>部分 VLA 也自回归地产生动作 token。这里真正不同的是：Code as Runtime 把可执行策略过程本身作为主要生成与 RL 对象，而不是只把奖励落在动作序列上。</p></div>
+          </div>
+        </section>
+
+        <section class="training-section" aria-labelledby="reward-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">02 · Verifiers and credit</p>
+            <h2 id="reward-heading">最终成功给方向，<br>过程奖励给信用分配。</h2>
+            <p>单一 success reward 太稀疏，也容易让策略找到仿真捷径。更合适的做法是保留独立 outcome verifier，同时用可信度不同的检查器刻画进度、约束、调用和恢复质量。</p>
+          </header>
+
+          <div class="reward-equation" role="img" aria-label="Code as Runtime 的示例奖励组成">
+            <span>R(trace)</span><b>=</b><em>outcome</em><b>+</b><em>Δ progress</em><b>+</b><em>endpoint checks</em><b>−</b><em>violations</em><b>−</b><em>runtime cost</em>
+          </div>
+
+          <div class="reward-ledger">
+            <div class="reward-row heading"><span>信号</span><span>监督什么</span><span>优先证据</span><span>主要风险</span></div>
+            <div class="reward-row"><b>Outcome</b><span>任务最终是否完成</span><span>仿真状态 / 真机传感器 / 人工复核</span><span>稀疏，可能掩盖错误过程</span></div>
+            <div class="reward-row"><b>Progress</b><span>距离子目标是否真实缩短</span><span>potential difference、阶段条件、几何量</span><span>被代理指标劫持</span></div>
+            <div class="reward-row"><b>Endpoint</b><span>目标、观察、约束、调用、状态、恢复</span><span>规则、物理、校准后的视觉 verifier</span><span>错误检查器污染信用分配</span></div>
+            <div class="reward-row"><b>Safety</b><span>碰撞、超力、越界和权限</span><span>确定性规则与独立安全系统</span><span>不应由模型自评覆盖</span></div>
+            <div class="reward-row"><b>Cost</b><span>无效观察、冗长代码、频繁改 queue</span><span>token、延迟、调用和执行计数</span><span>过强会压制必要恢复</span></div>
+          </div>
+
+          <aside class="training-note">
+            <b>Progress reward 最好描述状态变化，而不是奖励“说自己取得了进展”。</b>
+            <p>例如奖励夹爪到可达 pre-grasp 的势能差、物体进入目标区域的几何变化，或经过校准的接触状态变化；自然语言 self-check 只能作为待验证声明，不能自己给自己打分。</p>
+          </aside>
+        </section>
+
+        <section class="training-section" aria-labelledby="teacher-heading">
+          <header class="section-intro">
+            <p class="eyebrow">03 · Teacher curriculum</p>
+            <h2 id="teacher-heading">Teacher 不是一个模型，<br>而是一组逐步撤除的权限。</h2>
+            <p>冷启动时可以让不同 teacher 分别负责求解、轨迹投影、批改和制造失败。课程的目标不是永远依赖更强 teacher，而是让 privileged intervention rate 持续下降，直到部署时只剩普通 observation 与 runtime API。</p>
+          </header>
+
+          <div class="teacher-ladder">
+            <article><span>00</span><div><small>SCHEMA TEACHER</small><h3>固定输出契约</h3><p>用少量人工模板定义 decision、代码、tool result、verification 和 recovery 的可解析 trace。</p></div><b>SFT</b></article>
+            <article><span>01</span><div><small>PRIVILEGED SOLVER</small><h3>先保证任务可完成</h3><p>读取仿真 GT、mesh、接触和碰撞信息，产生高成功率解与精确失败原因。</p></div><b>ORACLE</b></article>
+            <article><span>02</span><div><small>TRACE PROJECTOR</small><h3>投影成部署形态</h3><p>把 oracle 解转换为 observation、工具调用和 runtime code；保留 privileged provenance 与残差。</p></div><b>DISTILL</b></article>
+            <article><span>03</span><div><small>OBSERVATION TEACHER</small><h3>撤掉 GT 输入</h3><p>只使用渲染图像、proprio、force/tactile 和部署时存在的 helper，模仿投影轨迹。</p></div><b>IMITATE</b></article>
+            <article><span>04</span><div><small>VERIFIER RL</small><h3>让 on-policy trace 自我扩展</h3><p>端点注错、候选采样、执行判分与恢复训练，逐步覆盖 teacher 未写过的分支。</p></div><b>RL</b></article>
+            <article><span>05</span><div><small>REAL-ROBOT CALIBRATION</small><h3>只用真机校正剩余 gap</h3><p>用受限预算验证感知、接触、延迟和 handler 行为，不把仿真成功直接当成现实结论。</p></div><b>DEPLOY</b></article>
+          </div>
+        </section>
+
+        <section class="training-section" aria-labelledby="projection-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">04 · Privileged trace projection</p>
+            <h2 id="projection-heading">可以借用真值完成任务，<br>不能伪造真值的来源。</h2>
+            <p>仿真 GT 很适合产生动作与检查标签，但如果 trace 声称一个视觉系统推导出了它从未看到的精确量，就会制造不可部署的因果捷径。正确目标是 deployment-shaped trace，而不是删除 provenance。</p>
+          </header>
+
+          <div class="grasp-projection">
+            <div class="projection-column oracle">
+              <small>PRIVILEGED ORACLE</small><h3>从 mesh GT 求解抓取</h3>
+              <pre><code>mesh_gt = sim.object_mesh(id)
+pose_gt = sim.object_pose(id)
+g_star = antipodal_grasp(mesh_gt, pose_gt)
+execute(g_star)</code></pre>
+              <p>它负责回答“存在什么可行解”，并提供碰撞、接触与最终成功标签。</p>
+            </div>
+            <div class="projection-arrow" aria-hidden="true">→</div>
+            <div class="projection-column visible">
+              <small>DEPLOYMENT-SHAPED TRACE</small><h3>从视觉表征产生候选</h3>
+              <pre><code>mesh_hat = reconstruct(multiview_rgbd)
+g_vis = propose_grasp(mesh_hat)
+residual = refine_grasp(obs, g_vis)
+queue.push(grasp_chunk(g_vis + residual))</code></pre>
+              <p>主 Agent 只调用部署时存在的 perception 与 refinement helper。</p>
+            </div>
+            <div class="projection-arrow" aria-hidden="true">→</div>
+            <div class="projection-column audit">
+              <small>TEACHER RESIDUAL</small><h3>Magic Offset 只做脚手架</h3>
+              <pre><code>delta_magic = g_star - g_vis
+label(refine_grasp, delta_magic)
+record(privileged=true,
+       residual=delta_magic,
+       projection_error=...)</code></pre>
+              <p>offset 用来训练可部署的 residual helper，并在课程中逐步归零；它不能被冒充成视觉观测结果。</p>
+            </div>
+          </div>
+
+          <div class="projection-rules">
+            <div><b>策略输入</b><span>只包含 sim/real 交集中的 observation、状态和 API。</span></div>
+            <div><b>Teacher sidecar</b><span>单独保存 GT、Magic Offset、oracle action、失败原因和标签置信度。</span></div>
+            <div><b>验收条件</b><span>撤掉 sidecar 后重新 rollout；只有 observation-only 策略仍通过 verifier 才进入下一阶段。</span></div>
+          </div>
+
+          <h3 class="subsection-title">同一个投影办法可以扩展到更多任务</h3>
+          <div class="task-examples">
+            <article><small>PLACEMENT</small><b>稳定放置</b><p>GT 支撑面与稳定姿态产生 oracle goal；视觉 scene reconstruction 产生候选，residual teacher 监督最终 pose refinement。</p></article>
+            <article><small>ARTICULATION</small><b>门与抽屉</b><p>GT joint axis 和接触点产生可行轨迹；学生从视觉与力反馈估计关节状态，并学习何时更新 force handler。</p></article>
+            <article><small>OCCLUSION</small><b>主动观察</b><p>GT visibility graph 选择最佳相机位；投影 trace 改写为根据不确定度调用换视角与多帧融合。</p></article>
+            <article><small>RECOVERY</small><b>失败恢复</b><p>仿真直接给出 slip、collision 或 missed grasp 原因；学生只看到可观测症状，并学习重新观察、回撤或停止。</p></article>
+          </div>
+        </section>
+
+        <section class="training-section" aria-labelledby="artifact-teacher-heading">
+          <header class="section-intro">
+            <p class="eyebrow">05 · Runtime artifact teachers</p>
+            <h2 id="artifact-teacher-heading">不只示教“做什么”，<br>还要示教 runtime 应该怎样写。</h2>
+            <p>同一任务可以有多种正确 Action 输出和 handler 实现。仿真允许 teacher 批量生成候选代码、执行单元测试、注入异常并选择多样化解，从而避免主 Agent 只学会一种僵硬模板。</p>
+          </header>
+
+          <div class="artifact-matrix">
+            <div class="artifact-card action">
+              <small>ACTION BUILDER TEACHER</small><h3>正常任务动作</h3>
+              <pre><code># equivalent valid implementations
+queue.push(interpolate(keyframes))
+queue.push(plan_to_pose(goal))
+queue.push(vla_primitive(goal, horizon=.8))</code></pre>
+              <p>在相同 typed action contract 下，覆盖 interpolation、motion planner、learned primitive 与不同 queue mutation。</p>
+            </div>
+            <div class="artifact-card handler">
+              <small>HANDLER TEACHER</small><h3>事件与快速响应</h3>
+              <pre><code>@on_force(threshold=12.0)
+def guard(obs, queue):
+    queue.truncate(after="inflight")
+    queue.push(stabilize(obs))
+    emit_event("force-guard")</code></pre>
+              <p>覆盖 on-frame、force、tactile、timeout 与 tracker-loss；同时监督触发条件、状态寿命、queue 权限和退出条件。</p>
+            </div>
+          </div>
+
+          <div class="handler-curriculum" role="img" aria-label="handler teacher 的异常注入课程">
+            <span>normal rollout</span><i>→</i><span>inject slip / occlusion / delay</span><i>→</i><span>handler fires</span><i>→</i><span>queue mutation</span><i>→</i><span>verifier grades recovery</span>
+          </div>
+
+          <aside class="training-note cyan">
+            <b>完整能力不等于每次都应该写 handler。</b>
+            <p>训练中要同时加入负例：没有低延迟需求时不安装 handler；handler 已过期时主动移除；简单 CONTINUE 足够时不改 queue。否则模型会用越来越复杂的 runtime 掩盖不确定性。</p>
+          </aside>
+        </section>
+
+        <section class="training-section" aria-labelledby="cap-curriculum-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">06 · CAP-derived curriculum</p>
+            <h2 id="cap-curriculum-heading">在每个可监督端点注错，<br>让恢复成为常规训练数据。</h2>
+            <p>CAP 的一个直接启发是：显式 trace 暴露了比 outcome 更多的训练位置。仿真可以在这些位置系统地产生反事实，而不是只增加成功示范数量。</p>
+          </header>
+
+          <div class="endpoint-track">
+            <article><span>01</span><b>目标</b><p>替换相似物体、交换指令、加入 distractor。</p></article>
+            <article><span>02</span><b>观察</b><p>遮挡、模糊、相机失配、深度缺失。</p></article>
+            <article><span>03</span><b>约束</b><p>改变禁入区、负载、速度与力上限。</p></article>
+            <article><span>04</span><b>调用</b><p>单位错误、不可达 pose、timeout、工具失败。</p></article>
+            <article><span>05</span><b>状态</b><p>滑落、碰撞、抓空、延迟与部分执行。</p></article>
+            <article><span>06</span><b>恢复</b><p>比较继续、重试、换视角、降级与停止。</p></article>
+          </div>
+
+          <div class="curriculum-contract">
+            <div><small>SHARED API</small><b>仿真与真机共享 typed action contract</b><p>参数、单位、坐标系、timeout、失败码和取消语义保持一致，只替换执行后端。</p></div>
+            <div><small>TRUST LEVEL</small><b>记录 verifier 类型与置信度</b><p>规则、仿真物理、真机传感器、视觉模型和模型自评不能被当成同等可靠标签。</p></div>
+            <div><small>SHORTCUT AUDIT</small><b>专门寻找 simulator exploitation</b><p>隔离场景、mesh、随机种子与任务模板；检查 trace 是否读取了部署时不存在的字段。</p></div>
+          </div>
+        </section>
+
+        <section class="training-section closing-section" aria-labelledby="exit-heading">
+          <header class="section-intro">
+            <p class="eyebrow">07 · Exit conditions</p>
+            <h2 id="exit-heading">Teacher 是否成功，<br>看它能否被撤掉。</h2>
+            <p>冷启动数据的价值不在 oracle rollout 本身，而在它是否让 observation-only policy 获得可复现能力。每一阶段都应该以撤除权限后的重新执行作为验收，而不是只比较离线 token loss。</p>
+          </header>
+
+          <div class="exit-grid">
+            <div><b>Privileged gap</b><span>oracle success 与 observation-only success 的差距是否持续缩小？</span></div>
+            <div><b>Intervention rate</b><span>需要 Magic Offset、GT recovery 或 teacher patch 的比例是否下降？</span></div>
+            <div><b>Verifier calibration</b><span>过程奖励是否真的预测最终成功，而非只奖励漂亮 trace？</span></div>
+            <div><b>Recovery coverage</b><span>未见扰动下，Agent 是否能定位失败端点并选择合适恢复？</span></div>
+            <div><b>Runtime economy</b><span>成功率相同时，是否减少无效 token、helper 调用和 handler 数量？</span></div>
+            <div><b>Real-robot transfer</b><span>共享接口之后仍剩多少 perception、contact、latency 和 calibration gap？</span></div>
+          </div>
+
+          <p class="closing-copy">这条路线的核心不是“用仿真真值伪造完美推理”，而是先让真值 teacher 找到可行解，再把解拆成可监督、可执行、可审计的 runtime trace；随后逐项撤掉 teacher 权限，让 verifier RL 接管剩余搜索。最终部署的 Agent 只能依靠它真正看得到的 observation，和它真正能够调用的代码与工具。</p>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

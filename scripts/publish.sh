@@ -14,5 +14,5 @@ Review the diff, then use the normal Git flow:
   git commit -m "Publish article"
   git push origin main
 
-GitHub Actions will deploy site/ after main is updated.
+GitHub Actions will deploy materials/code-as-runtime/article/ after main is updated.
 MESSAGE

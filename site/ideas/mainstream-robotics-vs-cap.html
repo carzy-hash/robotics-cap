@@ -88,6 +88,12 @@
 → 训练动作策略
 → 观察 → 预测短动作 → 执行 → 再观察
 → 在仿真和真机上统计结果</code></pre>
+            <figure class="article-figure">
+              <a href="../assets/illustrations/robotics-cap-points/01-mainstream-pipeline-clay-v2.png" target="_blank" rel="noopener">
+                <img src="../assets/illustrations/robotics-cap-points/01-mainstream-pipeline-clay-v2.png" alt="主流机器人动作策略的训练与部署流程：人类遥操作产生图像、指令、机器人状态和专家动作数据，模型学习后通过短动作执行与重新观察形成闭环" loading="eager" decoding="async">
+              </a>
+              <figcaption>图 1｜主流动作策略通常先从图像、指令、机器人状态与专家动作中学习；部署时预测一小段动作，执行后重新观察，再决定下一段动作。</figcaption>
+            </figure>
             <p>
               真实系统并不一定只有一个端到端模型。不少系统已经有高层规划器、安全规则、成功检测器或恢复模块。
               这里讨论的是以行为克隆和视觉—语言—动作模型为代表的共同核心：大量监督直接落在动作预测和任务结果上。
@@ -136,6 +142,12 @@
               系统还可以加入成功标签、奖励、价值估计、视觉或语言辅助目标。可是目标选错、观察不足、约束漏掉等原因，
               常常没有统一的显式记录，失败后需要从整个轨迹和外围日志倒查。
             </p>
+            <figure class="article-figure">
+              <a href="../assets/illustrations/robotics-cap-points/05-supervision-limits-clay-v2.png" target="_blank" rel="noopener">
+                <img src="../assets/illustrations/robotics-cap-points/05-supervision-limits-clay-v2.png" alt="主流机器人监督边界示意：上层记录专家动作、预测轨迹和最终结果，下层的目标错误、观察不足、约束遗漏和恢复错误分散在相机、规划器与传感器日志中" loading="lazy" decoding="async">
+              </a>
+              <figcaption>图 2｜专家动作、预测轨迹和最终结果通常容易记录；目标选择、观察充分性、约束遗漏与恢复判断则可能分散在不同模块和日志中，需要事后组合分析。</figcaption>
+            </figure>
             <p>一套可信评测至少回答五个白话问题：</p>
             <ul>
               <li><strong>能否完成：</strong>杯子最终是否进入托盘？</li>
@@ -173,6 +185,12 @@
               <article><strong>状态</strong><p>执行后的世界符合预期吗？</p></article>
               <article><strong>恢复</strong><p>应该继续、重试、降级还是停止？</p></article>
             </div>
+            <figure class="article-figure">
+              <a href="../assets/illustrations/robotics-cap-points/10-supervision-endpoints-clay-v2.png" target="_blank" rel="noopener">
+                <img src="../assets/illustrations/robotics-cap-points/10-supervision-endpoints-clay-v2.png" alt="CAP 六类监督端点闭环：依次检查目标、观察、约束和动作调用，执行短 Action Chunk 后验证状态，失败时进入重试、换视角、降级或停止分支" loading="lazy" decoding="async">
+              </a>
+              <figcaption>图 3｜CAP 沿同一任务流程检查目标、观察、约束、动作调用、执行状态与恢复选择；失败可以触发重新观察、重试、降级或停止，而不是继续执行一条长动作序列。</figcaption>
+            </figure>
             <p>
               不同答案的可信度不同。碰撞、速度和权限尽量由确定性规则裁决；接触与动作结果优先看传感器或仿真物理结果；
               视觉判断和模型自评只能作为带置信度的估计。独立低层安全控制器始终可以覆盖策略程序。

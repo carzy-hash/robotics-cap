@@ -13,7 +13,7 @@ fi
 
 REPO_NAME="robotics-cap"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PUBLIC_ROOT="$REPO_ROOT/site"
+PUBLIC_ROOT="$REPO_ROOT/materials/code-as-runtime/article"
 PREVIEW_ROOT="${TMPDIR:-/tmp}/robotics-cap-pages-preview"
 SITE_ROOT="$PREVIEW_ROOT/$REPO_NAME"
 RUN_ROOT="${TMPDIR:-/tmp}/robotics-cap-review"
@@ -78,8 +78,7 @@ start_server() {
   rm -rf "$PREVIEW_ROOT"
   mkdir -p "$SITE_ROOT"
   cp -R "$PUBLIC_ROOT/." "$SITE_ROOT/"
-  cp -R "$PUBLIC_ROOT" "$SITE_ROOT/site"
-  for workflow_dir in work candidates reviews; do
+  for workflow_dir in work candidates reviews previews materials; do
     if [[ -d "$REPO_ROOT/$workflow_dir" ]]; then
       cp -R "$REPO_ROOT/$workflow_dir" "$SITE_ROOT/$workflow_dir"
     fi
@@ -92,7 +91,7 @@ import sys
 
 root = pathlib.Path(sys.argv[1])
 entries = []
-for directory in ("work", "candidates", "reviews"):
+for directory in ("work", "candidates", "reviews", "previews", "materials"):
     base = root / directory
     if not base.exists():
         continue
@@ -110,8 +109,8 @@ hub.mkdir()
     "<style>body{max-width:960px;margin:40px auto;padding:0 24px;font:16px/1.6 system-ui}"
     "code{background:#eee;padding:2px 5px}li{margin:6px 0}</style>"
     "<h1>Robotics CAP Review Workspace</h1>"
-    "<p>This local-only index exposes committed work, candidates, and reviews. "
-    "GitHub Pages still deploys <code>site/</code> only.</p><ul>"
+    "<p>This local-only index exposes committed work, candidates, reviews, and reusable materials. "
+    "GitHub Pages deploys only <code>materials/code-as-runtime/article/</code>.</p><ul>"
     + "".join(entries)
     + "</ul></html>",
     encoding="utf-8",

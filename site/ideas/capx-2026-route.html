@@ -86,6 +86,10 @@
               动作序列往往只能在执行后看结果；代码可以在执行前审计。我们可以问：目标是否明确？约束是否足够？
               观察不足时是否会停？是否有重试和退出？这正是策略代码比长动作序列更适合作为中间层的原因。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/06a-agent-code-output-clay.png" alt="黏土风格的 Code Agent 把任务转化为可执行策略代码" loading="eager" decoding="async">
+              <figcaption>CapX 希望保留 Code Agent 擅长的分解、调用与检查能力，而不是过早压缩成一条动作轨迹。</figcaption>
+            </figure>
           </section>
 
           <section id="stack">
@@ -252,6 +256,10 @@
               这里可以借一个局部神经中枢的比喻：不是所有控制都必须回到单一大脑。许多局部执行器和观测器组成代码 block，
               既能安全完成子动作，也能保持敏捷。它甚至可能是系统最终超人的一个原因：并行流程可以比单一路径更快地观察、检查和修正。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/17-parallel-agent-tools-clay.png" alt="黏土风格的多个 Agent 工具并行控制机器人模块" loading="lazy" decoding="async">
+              <figcaption>局部代码块可以并行负责手臂、视角与传感器，并通过少量明确的控制信号协作。</figcaption>
+            </figure>
           </section>
 
           <section id="visual-servo">
@@ -298,6 +306,10 @@
             <p>
               需要审计的失败包括：目标错、约束缺失、观察不足、仿真捷径。每类都可以设计奖励或惩罚，让训练过程不只关注最终是否成功。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/11c-code-sim-to-real-clay.png" alt="黏土风格的同一套策略代码从仿真迁移到真实机器人" loading="lazy" decoding="async">
+              <figcaption>同一套策略接口跨越仿真与真机，但真实世界仍负责校验仿真无法还原的物理细节。</figcaption>
+            </figure>
           </section>
 
           <section id="audit">
@@ -315,6 +327,10 @@
             <p>
               审计不是让机器人变慢到不可用，而是决定哪些动作可以自动执行、哪些需要重新观察、哪些必须人工确认或停止。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/14-agent-execution-repair-clay.png" alt="黏土风格的机器人 Agent 在执行中检查错误并修复策略" loading="lazy" decoding="async">
+              <figcaption>策略程序把失败暴露为可定位的步骤，使系统能够在短执行周期之间重试、修复或停止。</figcaption>
+            </figure>
           </section>
 
           <section id="prerequisites">
@@ -333,6 +349,10 @@
                 <p>每次任务要记录观察、代码、动作、反馈、失败和修正。没有记录，就很难监督、审计和迭代。</p>
               </article>
             </div>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/19-costs-prerequisites-clay.png" alt="黏土风格的工程团队面对 CapX 路线所需的多项成本与前提" loading="lazy" decoding="async">
+              <figcaption>这条路线仍依赖接口、检查器、仿真真实性与真机闭环等工程前提，不能只靠更强模型成立。</figcaption>
+            </figure>
           </section>
 
           <section id="next" class="closing">

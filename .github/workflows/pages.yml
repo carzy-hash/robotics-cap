@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "site/**"
+      - "materials/code-as-runtime/article/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: materials/code-as-runtime/article
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

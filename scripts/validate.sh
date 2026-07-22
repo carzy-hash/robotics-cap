@@ -13,6 +13,7 @@ import urllib.parse
 
 root = pathlib.Path(sys.argv[1]).resolve()
 site = root / "site"
+public = root / "materials" / "code-as-runtime" / "article"
 errors = []
 
 def is_within(path, parent):
@@ -23,12 +24,12 @@ def is_within(path, parent):
         return False
 
 required_public = [
-    site / "index.html",
-    site / "ideas" / "index.html",
-    site / "ideas" / "capx-2026-route.html",
-    site / "ideas" / "cap-ar-native-training.html",
-    site / "assets" / "styles.css",
-    site / ".nojekyll",
+    public / "index.html",
+    public / "context.html",
+    public / "training.html",
+    public / "styles.css",
+    public / "architecture-detail.js",
+    public / "assets" / "nervous-system-v1.png",
 ]
 for path in required_public:
     if not path.exists():
@@ -58,11 +59,15 @@ class LinkParser(html.parser.HTMLParser):
             if attr in values:
                 self.links.append(values[attr])
 
-html_pages = sorted(site.rglob("*.html")) + sorted((root / "candidates").rglob("*.html"))
+html_pages = (
+    sorted(site.rglob("*.html"))
+    + sorted((root / "candidates").rglob("*.html"))
+    + sorted((root / "materials").rglob("*.html"))
+)
 for page in html_pages:
     text = page.read_text(encoding="utf-8")
-    is_public = is_within(page, site)
-    if is_public and re.search(r"(?:^|[/'\"])(?:work|candidates|reviews)/", text):
+    is_public = is_within(page, public)
+    if is_public and re.search(r"(?:^|[/'\"])(?:work|candidates|reviews|materials)/", text):
         errors.append(f"public page references an internal workflow directory: {page.relative_to(root)}")
 
     parser = LinkParser()
@@ -74,22 +79,24 @@ for page in html_pages:
         clean = urllib.parse.unquote(parsed.path)
         if not clean:
             continue
-        target = (site / clean.lstrip("/")) if clean.startswith("/") else (page.parent / clean)
+        target = (public / clean.lstrip("/")) if clean.startswith("/") else (page.parent / clean)
         target = target.resolve()
         try:
             target.relative_to(root)
         except ValueError:
             errors.append(f"link escapes repository: {page.relative_to(root)} -> {raw_link}")
             continue
-        if is_public and not is_within(target, site):
-            errors.append(f"public link escapes site/: {page.relative_to(root)} -> {raw_link}")
+        if is_public and not is_within(target, public):
+            errors.append(f"public link escapes Code as Runtime article: {page.relative_to(root)} -> {raw_link}")
             continue
         if target.is_dir():
             target = target / "index.html"
         if not target.exists():
             errors.append(f"broken local link: {page.relative_to(root)} -> {raw_link}")
 
-for log in sorted((root / "work").glob("*/iteration-log.jsonl")):
+iteration_logs = sorted((root / "work").glob("*/iteration-log.jsonl"))
+iteration_logs += sorted((root / "materials").glob("*/notes/iteration-log.jsonl"))
+for log in iteration_logs:
     for line_number, line in enumerate(log.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
             continue

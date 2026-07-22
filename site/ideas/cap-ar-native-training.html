@@ -92,6 +92,10 @@
               这和语言模型、代码模型的监督方式是同构的：输入上下文，生成下一段可检查的符号结构。区别只是这些符号最终会调用
               机器人动作接口，而不是停在文本世界。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/06c-code-action-chunk-clay.png" alt="黏土风格的策略代码生成短 Action Chunk 的分层结构" loading="eager" decoding="async">
+              <figcaption>AR 主策略负责逐步形成可审计的程序结构，短 Action Chunk 则留在受约束的动作层生成。</figcaption>
+            </figure>
           </section>
 
           <section id="fact-index">
@@ -191,6 +195,10 @@
               CAP 的训练样本可以直接监督“模型应该怎样写策略”。这比只监督最终动作成功更细：可以监督目标提取是否正确，
               约束是否被写出来，观察不足时是否停止，执行失败后是否重新规划。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/13-continuous-tools-clay.png" alt="黏土风格的 CAP 主策略调用连续动作工具，展示清晰的层级边界" loading="lazy" decoding="async">
+              <figcaption>策略层保持离散、可检查的调用结构，连续生成工具在适合的局部动作中发挥作用。</figcaption>
+            </figure>
             <table class="comparison">
               <thead>
                 <tr>
@@ -295,6 +303,10 @@
             <p>
               关键是不要反过来：不要因为底层动作可以用连续生成，就把主策略层也强行交给连续生成范式。目标、约束和恢复逻辑仍然应该保持可读。
             </p>
+            <figure class="article-figure">
+              <img src="../assets/illustrations/robotics-cap-points/12-ar-strategy-training-clay.png" alt="黏土风格的 AR 策略训练与连续低层控制分工" loading="lazy" decoding="async">
+              <figcaption>路线选择不是 AR 与连续生成二选一，而是让两者分别承担主策略与低层动作职责。</figcaption>
+            </figure>
           </section>
 
           <section id="capx-link" class="closing">

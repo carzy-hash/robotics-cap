@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Code as Runtime · Agent 编写机器人运行时</title>
+    <meta name="description" content="Code as Runtime：主 Agent 持续编写和修改动作构建代码与事件处理代码，让同一套机器人运行时跨越多轮决策。">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="nervous-page">
+    <header class="candidate-nav">
+      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
+        <a class="active" href="./">01 Runtime</a>
+        <a href="context.html">02 Context</a>
+        <a href="training.html">03 Training</a>
+      </nav>
+    </header>
+
+    <main class="candidate-shell">
+      <header class="candidate-hero compact">
+        <p class="eyebrow">Code as Runtime · Architecture note</p>
+        <h1>Agent 通过代码，<br>维护机器人运行时。</h1>
+        <p class="lead">Code as Runtime 把模型输出从一次性的 action 或 program，变成可持续执行、观察和改写的控制层。每轮决策中，主 Agent 可以运行代码构建 Action Chunk，也可以安装按频率或事件触发的 handler；两类代码跨越决策周期，共同维护机器人正在消费的 Action Queue。</p>
+      </header>
+
+      <architecture-detail data-variant="nervous"></architecture-detail>
+    </main>
+    <script src="architecture-detail.js?v=code-as-runtime-copy"></script>
+  </body>
+</html>

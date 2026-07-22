@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Code as Runtime · 主 Agent 的上下文如何构建</title>
+    <meta name="description" content="为 Code as Runtime 构建缓存友好的多模态上下文：稳定前缀在前，粘性历史居中，最新图像放在最后。">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="context-note-page">
+    <header class="candidate-nav">
+      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
+        <a href="./">01 Runtime</a>
+        <a class="active" href="context.html">02 Context</a>
+        <a href="training.html">03 Training</a>
+      </nav>
+    </header>
+
+    <main class="candidate-shell">
+      <header class="candidate-hero compact context-hero">
+        <p class="eyebrow">Code as Runtime · Context note</p>
+        <h1>Code as Runtime 的主 Agent，<br>每轮获得什么上下文？</h1>
+        <p class="lead">这篇文章定义 Code as Runtime 的 wake-up context：主 Agent 每轮获得哪些输入、这些输入按什么顺序排列、哪些内容跨轮保持稳定，以及 latest image 为什么位于最后。目标是在保留任务执行所需状态的同时，尽量复用多模态推理缓存。</p>
+      </header>
+
+      <article class="context-article">
+        <section class="context-design-section" aria-labelledby="context-order-heading">
+          <header class="section-intro">
+            <p class="eyebrow">01 · The exact wake-up context</p>
+            <h2 id="context-order-heading">上下文从稳定前缀开始，<br>沿变化速度向后展开。</h2>
+            <p>这里假设推理服务对多模态输入使用严格的 prefix cache：只有从开头开始完全一致的 token 与图像内容才能复用。任何过早出现的时间戳、queue 余量或新图像，都会让它之后的内容失去缓存机会；目标服务是否缓存 image token，仍需用真实 cache hit 验证。</p>
+          </header>
+
+          <figure class="cache-stack-figure">
+            <div class="cache-stack" role="img" aria-label="主 Agent 每轮上下文从稳定前缀到最新图像的排列">
+              <div class="cache-layer fixed-layer">
+                <span class="layer-index">00</span>
+                <div><small>EXACT PREFIX · CROSS-EPISODE</small><b>System policy</b><p>角色、方法边界、安全原则、决策 contract，以及 CONTINUE / EMIT / RUN_ANALYSIS / UPDATE_HANDLER 的输出语义。</p></div>
+                <em>最稳定</em>
+              </div>
+              <div class="cache-layer fixed-layer">
+                <span class="layer-index">01</span>
+                <div><small>EXACT PREFIX · VERSIONED</small><b>Primitive contracts + fixed helpers</b><p>机器人 primitive、Action Queue API、observation schema、helper 函数实现与输出格式。只在版本升级时整体变化。</p></div>
+                <em>高复用</em>
+              </div>
+              <div class="cache-layer episode-layer">
+                <span class="layer-index">02</span>
+                <div><small>EPISODE PREFIX</small><b>Task, safety contract + stable scene facts</b><p>任务目标、禁止条件、机器人标定、相机角色，以及在 episode 内冻结的对象身份。</p></div>
+                <em>episode 内稳定</em>
+              </div>
+              <div class="cache-layer history-layer">
+                <span class="layer-index">03</span>
+                <div><small>STICKY VISUAL HISTORY</small><b>Selected history images · oldest → newest</b><p>事件锚点与指数时间桶中的历史图像。旧槽位优先保持不动，使 cache 尽可能晚才出现第一个 miss。</p></div>
+                <em>缓慢变化</em>
+              </div>
+              <div class="cache-layer rolling-layer">
+                <span class="layer-index">04</span>
+                <div><small>EXECUTABLE SNAPSHOT</small><b>Active runtime + Action Queue + progress</b><p>当前代码、已安装 handlers、queue 的 executed prefix / remaining horizon、任务进度、对象 belief 与 last truncate。</p></div>
+                <em>每轮可能变化</em>
+              </div>
+              <div class="cache-layer rolling-layer">
+                <span class="layer-index">05</span>
+                <div><small>RECENT DELTA</small><b>Decision summaries + tool / handler events</b><p>最近 2–4 次 decision、自检、工具输出、executor stdout、力或触觉异常，以及自上一轮以来发生了什么。</p></div>
+                <em>滚动窗口</em>
+              </div>
+              <div class="cache-layer current-layer">
+                <span class="layer-index">06</span>
+                <div><small>CURRENT TURN</small><b>Latest sensor summary + decision request</b><p>当前时间对应的 proprioception、force、tactile 与精简变化摘要；决策指令在图像之前写完。</p></div>
+                <em>本轮新内容</em>
+              </div>
+              <div class="cache-layer latest-layer">
+                <span class="layer-index">07</span>
+                <div><small>LAST CONTENT BLOCK</small><b>Latest image</b><p>信息量最大、token 较多且几乎必然不同。所有 helper、状态和说明都排列在它之前。</p></div>
+                <em>不可复用的现在</em>
+              </div>
+            </div>
+            <figcaption>排序遵循一个统一标准：越稳定越靠前，越容易变化越靠后。latest image 位于变化最快的一端。</figcaption>
+          </figure>
+        </section>
+
+        <section class="context-design-section" aria-labelledby="cache-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">02 · Where the cache breaks</p>
+            <h2 id="cache-heading">缓存只复用一条<br>精确的公共前缀。</h2>
+            <p>Turn N+1 能复用多少，取决于它与 Turn N 从开头起保持一致到哪里。最早发生变化的位置决定了本轮 cache miss 的起点。</p>
+          </header>
+
+          <figure class="turn-cache-figure">
+            <div class="turn-cache-labels"><span>reused prefix</span><span>recomputed suffix</span></div>
+            <div class="turn-row">
+              <b>TURN N</b>
+              <div class="turn-segment fixed-segment">system + helpers</div>
+              <div class="turn-segment episode-segment">task</div>
+              <div class="turn-segment history-segment">H₀ H₁ H₂ H₃</div>
+              <div class="turn-segment rolling-segment">runtime + trace</div>
+              <div class="turn-segment latest-segment">image N</div>
+            </div>
+            <div class="turn-row next-turn-row">
+              <b>TURN N+1</b>
+              <div class="turn-segment fixed-segment">system + helpers</div>
+              <div class="turn-segment episode-segment">task</div>
+              <div class="turn-segment history-segment">H₀ H₁ H₂ H₄</div>
+              <div class="turn-segment rolling-segment">runtime + trace′</div>
+              <div class="turn-segment latest-segment">image N+1</div>
+            </div>
+            <div class="cache-break"><span></span><b>first changed history slot</b><p>从 H₄ 开始重新计算；H₀–H₂ 之前的全部前缀仍可复用。</p></div>
+            <figcaption>因此历史图像应该按“最旧且最不容易变化”到“最新且最容易被替换”排列。把最新图像放到中间，会让它之后的 runtime state、trace 和 helpers 每轮一起失去缓存。</figcaption>
+          </figure>
+        </section>
+
+        <section class="context-design-section" aria-labelledby="history-heading">
+          <header class="section-intro">
+            <p class="eyebrow">03 · Sticky exponential history</p>
+            <h2 id="history-heading">指数衰减负责覆盖时间，<br>粘性槽位负责保住缓存。</h2>
+            <p>历史采样维护一组持久槽位：新帧只进入最近端；较老槽位在跨过时间桶边界或出现重要事件时替换。这样可以同时覆盖长时间跨度并保持公共前缀。</p>
+          </header>
+
+          <div class="history-layout">
+            <figure class="history-rail-figure">
+              <div class="history-rail" aria-label="从过去到现在的粘性指数历史图像采样">
+                <div class="history-frame anchor-frame"><span>t−64s</span><i></i><b>task start</b><small>event anchor</small></div>
+                <div class="history-frame"><span>t−32s</span><i></i><b>scene layout</b><small>sticky bucket</small></div>
+                <div class="history-frame"><span>t−16s</span><i></i><b>approach</b><small>sticky bucket</small></div>
+                <div class="history-frame anchor-frame"><span>t−8s</span><i></i><b>grasp</b><small>event anchor</small></div>
+                <div class="history-frame"><span>t−4s</span><i></i><b>holding</b><small>sticky bucket</small></div>
+                <div class="history-frame"><span>t−2s</span><i></i><b>transport</b><small>recent slot</small></div>
+                <div class="history-frame"><span>t−1s</span><i></i><b>last review</b><small>recent slot</small></div>
+              </div>
+              <figcaption>时间越近采样越密；接触、抓取、handler 安装和异常等事件可以额外固定为 anchor，不被普通时间采样挤掉。</figcaption>
+            </figure>
+
+            <div class="history-rules">
+              <div><span>01</span><p><b>旧到新排列</b>相同的旧图像形成最长公共前缀；最近槽位的轮换只影响 suffix。</p></div>
+              <div><span>02</span><p><b>槽位按事件更新</b>时间桶跨界、anchor 触发或预算压缩时，才替换对应 image id。</p></div>
+              <div><span>03</span><p><b>图像与说明一起冻结</b>timestamp、camera id、caption 与 image 必须作为一个不可变单元，否则文字变化同样会击穿 cache。</p></div>
+              <div><span>04</span><p><b>按信息增益淘汰</b>先删除与邻近帧重复的普通图像，保留动作转折、接触和失败证据。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="context-design-section" aria-labelledby="assembly-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">04 · One assembled turn</p>
+            <h2 id="assembly-heading">抓住香蕉之后，<br>这一轮上下文长什么样？</h2>
+            <p>下面展示序列化后的逻辑结构；具体实现可以映射到不同消息格式。决策请求在 latest image 之前完成，使图像成为输入的最后一个 content block。</p>
+          </header>
+
+          <div class="assembly-grid">
+            <pre class="prompt-example"><code>&lt;SYSTEM_POLICY v3&gt;
+You maintain an executable robot runtime.
+Return CONTINUE / EMIT / RUN_ANALYSIS / UPDATE_HANDLER.
+
+&lt;PRIMITIVES_AND_HELPERS sha=8d3…&gt;
+queue.replace_tail(...)  queue.clear(...)
+approach(...)  grasp_chunk(...)  @on_frame(...)
+
+&lt;EPISODE_CONTRACT id=banana_bowl_07&gt;
+Goal: put the banana in the bowl.
+Never release outside the verified bowl volume.
+
+&lt;VISUAL_HISTORY oldest_first&gt;
+[img:f_001 task-start] [img:f_118 pre-grasp]
+[img:f_164 grasp-close] [img:f_179 holding]
+
+&lt;RUNTIME_SNAPSHOT&gt;
+progress = "banana grasped"
+queue.remaining = 0.42s
+handlers = []
+active_code = grasp_v4
+
+&lt;RECENT_DELTA&gt;
+gripper closed; force in band; no slip observed
+last decision = EMIT_GRASP
+
+&lt;CURRENT_OBSERVATION_TEXT&gt;
+t = 3.6s; wrist tracker locked; transport not queued
+Decide whether to keep, emit action, or update runtime.
+
+[LATEST_IMAGE img:f_183 wrist-camera]</code></pre>
+
+            <aside class="assembly-notes">
+              <p><small>CACHE HIT</small><b>System → helpers → episode</b><span>跨轮保持字节级稳定；helper 的版本号变化时主动开始新的 cache lineage。</span></p>
+              <p><small>PARTIAL HIT</small><b>Visual history</b><span>前三个 image unit 没变；只有最近 holding 槽位可能触发新的 suffix。</span></p>
+              <p><small>FRESH TOKENS</small><b>Runtime → latest image</b><span>queue、事件和最新图像属于本轮状态，默认需要重新编码。</span></p>
+              <p><small>EXPECTED OUTPUT</small><b>UPDATE_HANDLER</b><span>Agent 安装 TAP drop guard；下一轮 context 会在 runtime snapshot 中看到 handler 版本与 stdout。</span></p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="context-design-section" aria-labelledby="budget-heading">
+          <header class="section-intro">
+            <p class="eyebrow">05 · An illustrative 64k budget</p>
+            <h2 id="budget-heading">优先保护可执行状态，<br>再给历史内容弹性空间。</h2>
+            <p>下列比例仅是一套起始配置。图像 token 数取决于视觉编码器、分辨率和 tiling；上线前必须在真实 processor 之后计数，并根据 cache hit、任务长度和失败类型调整。</p>
+          </header>
+
+          <figure class="budget-figure">
+            <div class="budget-bar" aria-label="64k context 的示例 token 比例">
+              <span class="budget-system" style="--share:5"><b>5%</b><small>system</small></span>
+              <span class="budget-helpers" style="--share:12"><b>12%</b><small>helpers</small></span>
+              <span class="budget-episode" style="--share:4"><b>4%</b><small>task</small></span>
+              <span class="budget-history" style="--share:38"><b>38%</b><small>history images</small></span>
+              <span class="budget-runtime" style="--share:14"><b>14%</b><small>runtime</small></span>
+              <span class="budget-trace" style="--share:10"><b>10%</b><small>trace</small></span>
+              <span class="budget-sensors" style="--share:3"><b>3%</b><small>sensors</small></span>
+              <span class="budget-latest" style="--share:14"><b>14%</b><small>latest image</small></span>
+            </div>
+
+            <div class="budget-ledger">
+              <div><b>5%</b><span>System + output contract</span><small>约 3.2k · 固定保留</small></div>
+              <div><b>12%</b><span>Primitives + fixed helpers</span><small>约 7.7k · 固定保留</small></div>
+              <div><b>4%</b><span>Episode contract</span><small>约 2.6k · episode 内固定</small></div>
+              <div><b>38%</b><span>Selected history images</span><small>约 24.3k · 最大弹性区</small></div>
+              <div><b>14%</b><span>Runtime + Action Queue</span><small>约 9.0k · 设置最低保障</small></div>
+              <div><b>10%</b><span>Recent trace + events</span><small>约 6.4k · 限制为最近 2–4 轮</small></div>
+              <div><b>3%</b><span>Current sensor summary</span><small>约 1.9k · 只写变化</small></div>
+              <div><b>14%</b><span>Latest image</span><small>约 9.0k · 始终位于末端</small></div>
+            </div>
+            <figcaption>固定前缀约占 17%，episode 前缀约占 4%，历史视觉是主要弹性预算；runtime state 与 latest observation 则必须保留足够空间，避免只记得过去却无法继续执行。</figcaption>
+          </figure>
+        </section>
+
+        <section class="context-design-section context-contract" aria-labelledby="contract-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">06 · Context builder contract</p>
+            <h2 id="contract-heading">真正需要实现的，<br>是确定性的 context builder。</h2>
+            <p>缓存收益最终取决于序列化是否稳定。相同状态必须生成相同前缀；预算不足时也要使用明确、可回放的淘汰顺序。</p>
+          </header>
+          <div class="contract-list">
+            <p><b>当前时间归入 current turn。</b><span>时间戳、request id 和动态统计统一排列在 system / helper 区之后。</span></p>
+            <p><b>所有集合稳定排序。</b><span>primitive、handler、对象 belief 和 tool result 使用确定 key；禁止依赖 map 的偶然遍历顺序。</span></p>
+            <p><b>history 使用不可变 image unit。</b><span>image id、caption、camera 与时间一旦进入槽位就一起冻结，直到该槽位被明确替换。</span></p>
+            <p><b>超预算时按价值淘汰。</b><span>先压缩重复 stdout 与普通帧，再缩短 decision trace；固定保留 safety contract、active code、queue state 和 latest image。</span></p>
+            <p><b>记录 cache lineage。</b><span>每轮 trace 保存 prefix version、首个变化 block、实际 token 占比与 cache hit，才能验证这套设计是否真的节省推理。</span></p>
+          </div>
+          <pre class="prompt-example builder-example"><code>def build_agent_context(snapshot, episode, budget):
+    blocks = [
+        SYSTEM_POLICY_V3,
+        PRIMITIVES_AND_HELPERS_V8,       # immutable, versioned
+        episode.frozen_contract(),       # stable inside this episode
+    ]
+
+    blocks += episode.history.select_sticky(
+        buckets=[64, 32, 16, 8, 4, 2, 1],
+        keep_event_anchors=True,
+        order="oldest_first",
+        budget=budget.history,
+    )
+
+    blocks += [
+        stable_serialize(snapshot.runtime),
+        summarize_recent_delta(snapshot, turns=4),
+        current_sensor_summary(snapshot),
+        DECISION_REQUEST,
+        snapshot.latest_image,          # always the last content block
+    ]
+
+    assert blocks[-1].type == "image"
+    return blocks</code></pre>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

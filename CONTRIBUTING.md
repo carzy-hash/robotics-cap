@@ -28,16 +28,16 @@
 
 ## 3. 正式发布
 
-只有通过评审并在 `decision.md` 中选定的版本才能进入 `site/ideas/`。发布时：
+只有通过评审并在 `decision.md` 中选定的版本才能成为公开入口。当前唯一发布目标是 `materials/code-as-runtime/article/`；其他文章默认只保留在源码中。发布时：
 
-1. 将最终稿整理为 `site/ideas/<article-id>.html`。
-2. 更新 `site/ideas/index.html`；需要时更新 `site/index.html`。
-3. 确保公开页面不链接 `work/`、`candidates/` 或 `reviews/`。
+1. 将最终稿整理到当前 workflow 指定的单一 Pages artifact 目录。
+2. 确保 artifact 根目录包含 `index.html` 及其全部本地资源。
+3. 确保公开页面不链接 `site/ideas/`、`work/`、`candidates/`、`reviews/` 或其他内部材料。
 4. 运行 `./scripts/validate.sh` 和 `./scripts/preview.sh restart`。
 5. 在根路径检查公开站点，并通过 `_workspace/` 并排检查工作材料、候选和评审。
 6. 检查桌面与移动端后，正常提交并推送 `main`。
 
-GitHub Actions 只部署 `site/`。仓库目录不是保密边界：public repo 中的工作材料仍可见。
+GitHub Actions 当前只部署 `materials/code-as-runtime/article/`。仓库目录不是保密边界：public repo 中未部署的历史文章和工作材料仍可从源码看到。
 
 ## Iteration log 格式
 
