@@ -28,6 +28,7 @@ required_public = [
     public / "context.html",
     public / "training.html",
     public / "data.html",
+    public / "references.html",
     public / "styles.css",
     public / "architecture-detail.js",
     public / "assets" / "nervous-system-v1.png",

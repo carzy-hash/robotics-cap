@@ -22,7 +22,7 @@
       <header class="candidate-hero compact context-hero">
         <p class="eyebrow">Code as Runtime · Context note</p>
         <h1>Code as Runtime 的主 Agent，<br>每轮获得什么上下文？</h1>
-        <p class="lead">这篇文章定义 Code as Runtime 的 wake-up context：主 Agent 每轮获得哪些输入、这些输入按什么顺序排列、哪些内容跨轮保持稳定，以及 latest image 为什么位于最后。目标是在保留任务执行所需状态的同时，尽量复用多模态推理缓存。</p>
+        <p class="lead">这篇文章定义 Code as Runtime 的 wake-up context：主 Agent 每轮获得哪些输入、这些输入按什么顺序排列、哪些内容跨轮保持稳定，以及 latest image 为什么位于最后。上下文延续 ReAct 的 action–observation 交错轨迹<sup class="cite"><a href="references.html#ref-2">[2]</a></sup>与 CodeAct 的多轮执行反馈<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>，同时尽量复用多模态推理缓存。</p>
       </header>
 
       <article class="context-article">
@@ -30,7 +30,7 @@
           <header class="section-intro">
             <p class="eyebrow">01 · The exact wake-up context</p>
             <h2 id="context-order-heading">上下文从稳定前缀开始，<br>沿变化速度向后展开。</h2>
-            <p>这里假设推理服务对多模态输入使用严格的 prefix cache：只有从开头开始完全一致的 token 与图像内容才能复用。任何过早出现的时间戳、queue 余量或新图像，都会让它之后的内容失去缓存机会；目标服务是否缓存 image token，仍需用真实 cache hit 验证。</p>
+            <p>这里假设推理服务对多模态输入使用严格的 prefix cache；SGLang 的 RadixAttention 是这类跨请求 KV cache 复用的代表实现<sup class="cite"><a href="references.html#ref-7">[7]</a></sup>。只有从开头开始完全一致的 token 与图像内容才能复用；任何过早出现的时间戳、queue 余量或新图像，都会让它之后的内容失去缓存机会。目标服务是否缓存 image token，仍需用真实 cache hit 验证。</p>
           </header>
 
           <figure class="cache-stack-figure">
@@ -261,6 +261,7 @@ Decide whether to keep, emit action, or update runtime.
     return blocks</code></pre>
         </section>
       </article>
+      <p class="article-references-link">本篇的 cache 排序与 sticky visual history 是本文提出的系统设计，不应理解为上述工作已经验证的机器人上下文最优解。<a href="references.html">查看完整参考文献 →</a></p>
     </main>
   </body>
 </html>

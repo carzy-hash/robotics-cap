@@ -22,10 +22,11 @@
       <header class="candidate-hero compact">
         <p class="eyebrow">Code as Runtime · Architecture note</p>
         <h1>Agent 通过代码，<br>维护机器人运行时。</h1>
-        <p class="lead">Code as Runtime 把模型输出从一次性的 action 或 program，变成可持续执行、观察和改写的控制层。每轮决策中，主 Agent 可以运行代码构建 Action Chunk，也可以安装按频率或事件触发的 handler；两类代码跨越决策周期，共同维护机器人正在消费的 Action Queue。</p>
+        <p class="lead">Code as Runtime 把模型输出从一次性的 action 或 program，变成可持续执行、观察和改写的控制层。每轮决策中，主 Agent 可以运行代码构建 Action Chunk，也可以安装按频率或事件触发的 handler；两类代码跨越决策周期，共同维护机器人正在消费的 Action Queue。它继承 Code as Policies 的机器人策略代码<sup class="cite"><a href="references.html#ref-1">[1]</a></sup>与 CodeAct 的多轮可执行代码动作<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>，并把它们放入持续消费动作的异步 runtime。</p>
       </header>
 
       <architecture-detail data-variant="nervous"></architecture-detail>
+      <p class="article-references-link">相关构件：Action Chunk 与 temporal ensembling<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>、实时异步 chunk 执行<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>、具身 coding agent 与 CaP-RL<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>。<a href="references.html">查看完整参考文献 →</a></p>
     </main>
     <script src="architecture-detail.js?v=code-as-runtime-copy"></script>
   </body>

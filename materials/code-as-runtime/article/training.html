@@ -22,7 +22,7 @@
       <header class="candidate-hero compact training-hero">
         <p class="eyebrow">Code as Runtime · Runtime Trace RL · 03</p>
         <h1>在 Runtime 中 rollout。<br>沿完整 trace 做 RL。</h1>
-        <p class="lead">Code as Runtime 的 RL 对象不是单步 action，也不是一段脱离执行的文本，而是主 Agent 与 runtime 共同产生的可执行轨迹：读取 observation、选择 decision、写代码、调用工具、修改 Action Queue、检查结果并在失败后恢复。环境持续执行，verifier 沿 trace 的关键端点提供 outcome、progress、约束与成本信号；teacher 只负责把策略带到能够开始 on-policy 探索的位置。</p>
+        <p class="lead">Code as Runtime 的 RL 对象不是单步 action，也不是一段脱离执行的文本，而是主 Agent 与 runtime 共同产生的可执行轨迹：读取 observation、选择 decision、写代码、调用工具、修改 Action Queue、检查结果并在失败后恢复。它借鉴可执行 code-agent trace<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>；CaP-X 已进一步展示具身 coding agent 的多轮反馈与 verifiable-reward RL<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>。本文在此基础上讨论完整 runtime trace 的 outcome、progress、约束与成本信号。</p>
       </header>
 
       <article class="training-article">
@@ -30,7 +30,7 @@
           <header class="section-intro">
             <p class="eyebrow">01 · Optimization object</p>
             <h2 id="rl-shape-heading">训练对象是一条可执行 trace，<br>不只是最后一段动作。</h2>
-            <p>它更像可执行 Code Agent 的训练闭环：模型自回归写出下一个 runtime decision，环境执行代码、工具与动作，新的 observation 再回到上下文。RL 优化的是这条跨越多轮的闭环策略，而不只是最终动作是否碰巧成功。</p>
+            <p>它更像可执行 Code Agent 的训练闭环：模型自回归写出下一个 runtime decision，环境执行代码、工具与动作，新的 observation 再回到上下文。这种 interleaved reasoning / acting 形式可追溯到 ReAct<sup class="cite"><a href="references.html#ref-2">[2]</a></sup>；RL 优化的是这条跨越多轮的闭环策略，而不只是最终动作是否碰巧成功。</p>
           </header>
 
           <figure class="trace-loop" aria-label="Code as Runtime 的自回归强化学习闭环">
@@ -46,8 +46,8 @@
 
           <div class="argument-grid">
             <div><small>WHAT IS AUTOREGRESSIVE</small><h3>整个主策略接口</h3><p>每一轮输出都接在已有 trace 后面：观察请求、代码、工具结果、queue 决策、自检与恢复选择都成为下一 token 的条件。</p></div>
-            <div><small>WHAT IS NOT IMPLIED</small><h3>不要求逐 token 控制电机</h3><p>Action Chunk 仍可由规划器、插值器、VLA primitive 或连续动作专家生成；自回归对象是上层 runtime trace。</p></div>
-            <div><small>FAIR VLA COMPARISON</small><h3>区别在主要监督出口</h3><p>部分 VLA 也自回归地产生动作 token。这里真正不同的是：Code as Runtime 把可执行策略过程本身作为主要生成与 RL 对象，而不是只把奖励落在动作序列上。</p></div>
+            <div><small>WHAT IS NOT IMPLIED</small><h3>不要求逐 token 控制电机</h3><p>Action Chunk 仍可由 ACT 类策略<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>、π₀ 类 flow policy<sup class="cite"><a href="references.html#ref-5">[5]</a></sup>、规划器或插值器生成；自回归对象是上层 runtime trace。</p></div>
+            <div><small>FAIR VLA COMPARISON</small><h3>区别在主要监督出口</h3><p>RT-2 等 VLA 也可以自回归地产生动作 token<sup class="cite"><a href="references.html#ref-13">[13]</a></sup>。这里真正不同的是：Code as Runtime 把可执行策略过程本身作为主要生成与 RL 对象，而不是只把奖励落在动作序列上。</p></div>
           </div>
         </section>
 
@@ -187,7 +187,7 @@ def guard(obs, queue):
           <header class="section-intro narrow">
             <p class="eyebrow">06 · CAP-derived curriculum</p>
             <h2 id="cap-curriculum-heading">在每个可监督端点注错，<br>让恢复成为常规训练数据。</h2>
-            <p>CAP 的一个直接启发是：显式 trace 暴露了比 outcome 更多的训练位置。仿真可以在这些位置系统地产生反事实，而不是只增加成功示范数量。</p>
+            <p>CaP-X / CaP-RL 的直接启发是：具身 coding agent 可以在执行反馈与可验证奖励下改进<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>。Code as Runtime 进一步把显式 trace 中的目标、观察、约束、调用、状态和恢复作为可注错端点，而不是只增加成功示范数量。</p>
           </header>
 
           <div class="endpoint-track">
@@ -225,6 +225,7 @@ def guard(obs, queue):
           <p class="closing-copy">这条 RL 路线的核心，是让 Agent 在与部署一致的 runtime 中持续产生、执行和修正 trace，再用可校准的 verifier 把环境后果归因到具体决策。teacher、仿真真值和 Magic Offset 都只是进入这个闭环的脚手架；真正被优化并最终部署的，是只依靠可见 observation 与可调用 runtime API 的 on-policy Agent。</p>
         </section>
       </article>
+      <p class="article-references-link">本文提出的 reward decomposition、teacher curriculum 与 endpoint fault injection 仍是待实验验证的训练设计。<a href="references.html">查看完整参考文献 →</a></p>
     </main>
   </body>
 </html>

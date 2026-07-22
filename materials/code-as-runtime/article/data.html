@@ -22,7 +22,7 @@
       <header class="candidate-hero compact data-hero">
         <p class="eyebrow">Code as Runtime · Real-data Trace SFT · 04</p>
         <h1>把真机采集，<br>变成可学习的 Runtime Trace。</h1>
-        <p class="lead">这篇文章讨论 Code as Runtime 的真实数据 SFT：如何把一次连续示教留下的多相机视频、关节、力、触觉和动作，转成一组主 Agent 可以自回归学习的 context → decision 样本。关键不是把轨迹均匀切片，而是重建每个 turn 当时可见的信息、正在消费的 Action Queue，以及可以由代码或 Action Chunk 表达的下一次决策。</p>
+        <p class="lead">这篇文章讨论 Code as Runtime 的真实数据 SFT：如何把一次连续示教留下的多相机视频、关节、力、触觉和动作，转成一组主 Agent 可以自回归学习的 context → decision 样本。DROID<sup class="cite"><a href="references.html#ref-10">[10]</a></sup>与 Open X-Embodiment<sup class="cite"><a href="references.html#ref-11">[11]</a></sup>代表了大规模真实机器人轨迹与标准化数据基础；本文关注其上的下一层——重建每个 turn 的因果上下文、Action Queue 与可执行 target decision。</p>
       </header>
 
       <article class="data-article">
@@ -51,7 +51,7 @@
           <header class="section-intro narrow">
             <p class="eyebrow">02 · Canonical event ledger</p>
             <h2 id="ledger-heading">先把不同频率的流，<br>对齐到一条事件账本。</h2>
-            <p>视频帧、控制命令、机器人实际运动与接触反馈并不同时到达。投影前先保留各自的 source timestamp，再建立经过校准的 episode clock；否则一个看似合理的 turn 可能已经使用了尚未到达的图像。</p>
+            <p>视频帧、控制命令、机器人实际运动与接触反馈并不同时到达。Open X-Embodiment 展示了跨 embodiment 统一数据格式的重要性<sup class="cite"><a href="references.html#ref-11">[11]</a></sup>；这里还要求保留各流的 source timestamp，再建立经过校准的 episode clock，否则一个看似合理的 turn 可能已经使用了尚未到达的图像。</p>
           </header>
 
           <div class="event-ledger">
@@ -75,7 +75,7 @@
           <header class="section-intro">
             <p class="eyebrow">03 · Pseudo-time replay</p>
             <h2 id="pseudo-time-heading">推理期间，<br>机器人并没有停下来。</h2>
-            <p>同步切片会产生一种不存在的世界：Agent 看完一段动作的最终结果，再决定这段动作该怎么写。伪时间回放则沿示教轨迹推进；每次 Agent 被唤醒后，Action Queue 在推理延迟 <code>d</code> 内继续消费，直到新的 decision 真正可用。</p>
+            <p>同步切片会产生一种不存在的世界：Agent 看完一段动作的最终结果，再决定这段动作该怎么写。RTC 明确刻画了“模型推理时旧 chunk 仍在执行”以及冻结已执行前缀的异步约束<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>；VLA-Corrector 则研究了检测偏离后缩短执行 horizon 的路径<sup class="cite"><a href="references.html#ref-12">[12]</a></sup>。本篇据此沿示教轨迹做伪时间回放。</p>
           </header>
 
           <figure class="pseudo-time-figure">
@@ -99,7 +99,7 @@
           <header class="section-intro narrow">
             <p class="eyebrow">04 · From motion to runtime decisions</p>
             <h2 id="action-code-heading">不是每段轨迹都值得<br>被解释成代码。</h2>
-            <p>先把稠密动作按接触、曲率、速度与任务阶段分段，再尝试用受限 primitive 重建。低曲率、非接触段通常适合压缩成 code；接触丰富、无法稳定拟合的段保留为 Action Chunk。能转才转，宁可保留真实 chunk，也不要制造漂亮但错误的 code。</p>
+            <p>Demo2Code 已探索从示教摘要到可执行机器人代码的两阶段合成<sup class="cite"><a href="references.html#ref-9">[9]</a></sup>。这里先把稠密动作按接触、曲率、速度与任务阶段分段，再尝试用受限 primitive 重建；低曲率、非接触段通常适合压缩成 code，接触丰富或拟合失败的段则保留为 ACT 类 Action Chunk<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>。能转才转，宁可保留真实 chunk，也不要制造漂亮但错误的 code。</p>
           </header>
 
           <div class="decision-projector">
@@ -205,6 +205,7 @@
           <p class="closing-copy">这条数据管线的直接产物，是与部署 runtime 同构的多轮 SFT 样本：输入只包含当时真正可见的 context，目标只包含下一次可执行的 Agent decision。随后 RL 可以复用同一 schema 继续 rollout，但 Real-data SFT 的首要成功标准仍是：训练样本里的世界，与采集当时真实存在的世界保持一致。</p>
         </section>
       </article>
+      <p class="article-references-link">伪时间 trace projector、code replay 偏差门槛与 recorded / derived / projected provenance 是本文提出的数据配方。<a href="references.html">查看完整参考文献 →</a></p>
     </main>
   </body>
 </html>

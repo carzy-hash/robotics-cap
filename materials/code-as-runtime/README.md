@@ -9,6 +9,7 @@
 - `article/context.html`：Context Note，描述主 Agent 每轮获得的 cache-aware 多模态上下文、粘性历史图像采样和 token 预算。
 - `article/training.html`：Runtime Trace RL，描述 on-policy runtime rollout、verifier/progress reward、信用分配，以及作为辅助的 teacher 冷启动。
 - `article/data.html`：Real-data Trace SFT，描述从连续多频率真机采集、事件账本与伪时间回放，构造因果有效的多轮 SFT 样本。
+- `article/references.html`：四篇文章共享的参考文献与引用边界说明。
 - `article/assets/`：文章视觉资源。
 - `review/index.html`：本地审阅封面，链接正文与提纲。
 - `review/decision.md`：视觉选择和发布门槛。
