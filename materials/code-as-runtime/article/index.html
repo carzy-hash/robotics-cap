@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · Agent-Written Robot Runtime</title>
-    <meta name="description" content="Code as Runtime: the main Agent continuously writes and revises action-building code and event-handler code, maintaining one robot runtime across multiple decisions.">
+    <title>Code as Runtime · Runtime Architecture</title>
+    <meta name="description" content="Code as Runtime Concept v0.1 proposes an Agent-written robot runtime with persistent Action Chunks and event handlers. The full design has not been evaluated.">
     <link rel="alternate" hreflang="en" href="./">
     <link rel="alternate" hreflang="zh-CN" href="zh/">
     <link rel="alternate" hreflang="x-default" href="./">
@@ -15,7 +15,7 @@
       <a class="mark" href="./" aria-label="Code as Runtime home"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
       <div class="nav-tools">
         <nav class="series-nav" aria-label="Code as Runtime article series">
-          <a class="active" href="./">01 Runtime</a>
+          <a class="active" aria-current="page" href="./">01 Runtime</a>
           <a href="context.html">02 Context</a>
           <a href="training.html">03 Runtime RL</a>
           <a href="data.html">04 Real-data SFT</a>
@@ -26,13 +26,14 @@
 
     <main class="candidate-shell">
       <header class="candidate-hero compact">
-        <p class="eyebrow">Code as Runtime · Architecture note</p>
-        <h1>The Agent maintains<br>the robot runtime through code.</h1>
-        <p class="lead">Code as Runtime turns model output from a one-off action or program into a control layer that can keep executing, observing, and rewriting itself. On every decision, the main Agent can run code to construct an Action Chunk or install handlers triggered by frequency or events. Both kinds of code persist across decision cycles and jointly maintain the Action Queue the robot is consuming. The design inherits robot policy code from Code as Policies<sup class="cite"><a href="references.html#ref-1">[1]</a></sup> and multi-turn executable code actions from CodeAct<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>, then places them inside an asynchronous runtime that continuously consumes actions.</p>
+        <p class="eyebrow">Code as Runtime · Architecture note · Concept v0.1 · Not peer reviewed</p>
+        <h1>Keep robot control running<br>between Agent decisions.</h1>
+        <p class="lead">Most code-generating robot policies emit one action or program but provide no persistent mechanism to monitor and revise execution between model turns. Code as Runtime proposes an asynchronous control layer: the main Agent writes Action Chunks and event-triggered handlers while the robot consumes an Action Queue. This note defines the Agent–runtime interface and persistent execution model. It does not report an implementation or robot evaluation.</p>
       </header>
 
+      <p class="article-references-link">The proposal combines policy code<sup class="cite"><a href="references.html#ref-1">[1]</a></sup>, executable Agent traces<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>, Action Chunks<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>, and asynchronous chunk execution<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>. No source evaluates this combination or its cross-turn handlers. <a href="references.html">View all references →</a></p>
+
       <architecture-detail data-variant="nervous"></architecture-detail>
-      <p class="article-references-link">Related building blocks: Action Chunks and temporal ensembling<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>, real-time asynchronous chunk execution<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>, and embodied coding agents with CaP-RL<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>. <a href="references.html">View all references →</a></p>
     </main>
     <script src="architecture-detail.js?v=code-as-runtime-copy"></script>
   </body>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Code as Runtime · Privileged-teacher Cold Start</title>
+    <meta name="description" content="Code as Runtime Concept v0.1 proposes a privileged-teacher cold start with strict input separation. No trained-policy or transfer results are reported.">
+    <link rel="alternate" hreflang="en" href="cold-start.html">
+    <link rel="alternate" hreflang="zh-CN" href="zh/cold-start.html">
+    <link rel="alternate" hreflang="x-default" href="cold-start.html">
+    <link rel="stylesheet" href="styles.css?v=training-note">
+  </head>
+  <body class="training-page">
+    <header class="candidate-nav">
+      <a class="mark" href="./" aria-label="Code as Runtime home"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <div class="nav-tools">
+        <nav class="series-nav" aria-label="Code as Runtime article series">
+          <a href="./">01 Runtime</a><a href="context.html">02 Context</a><a href="training.html" aria-current="location">03 Runtime RL</a><a href="data.html">04 Real-data SFT</a>
+        </nav>
+        <a class="language-switch" href="zh/cold-start.html" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
+      </div>
+    </header>
+    <main class="candidate-shell training-shell">
+      <header class="candidate-hero compact training-hero">
+        <p class="eyebrow">Code as Runtime · Training appendix · Concept v0.1 · Not peer reviewed</p>
+        <h1>Use privileged teachers only for initialization.</h1>
+        <p class="lead">This optional bootstrap initializes a policy before it can produce useful on-policy rollouts. Privileged signals may label traces built from deployment-visible inputs, but those signals must never enter policy input. Remove the privileged sidecar before evaluating the policy.</p>
+      </header>
+      <article class="training-article">
+        <section class="training-section" aria-labelledby="projection-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">Appendix · Privileged projection</p>
+            <h2 id="projection-heading">Keep privileged targets<br>out of policy input.</h2>
+            <p>Before the policy can roll out reliably, simulation ground truth can provide feasible solutions and checking labels for a cold start ahead of RL. But a trace that claims the vision system derived an exact value it never observed creates an undeployable causal shortcut. The right goal is deployment-shaped initialization, not long-term replacement of on-policy exploration by an oracle.</p>
+          </header>
+
+          <div class="grasp-projection">
+            <div class="projection-column oracle">
+              <small>PRIVILEGED ORACLE</small><h3>Solve a grasp from mesh ground truth</h3>
+              <pre><code>mesh_gt = sim.object_mesh(id)
+pose_gt = sim.object_pose(id)
+g_star = antipodal_grasp(mesh_gt, pose_gt)
+execute(g_star)</code></pre>
+              <p>It answers “what feasible solution exists” and supplies collision, contact, and terminal-success labels.</p>
+            </div>
+            <div class="projection-arrow" aria-hidden="true">→</div>
+            <div class="projection-column visible">
+              <small>DEPLOYMENT-SHAPED TRACE</small><h3>Produce candidates from visual representations</h3>
+              <pre><code>mesh_hat = reconstruct(multiview_rgbd)
+g_vis = propose_grasp(mesh_hat)
+residual = refine_grasp(obs, g_vis)
+runtime.submit(QueueUpdate.append(grasp_chunk(g_vis + residual)))</code></pre>
+              <p>The main Agent calls only perception and refinement helpers available at deployment.</p>
+            </div>
+            <div class="projection-arrow" aria-hidden="true">→</div>
+            <div class="projection-column audit">
+              <small>TEACHER RESIDUAL</small><h3>Use the Magic Offset only as scaffolding</h3>
+              <pre><code>delta_magic = g_star - g_vis
+label(refine_grasp, delta_magic)
+record(privileged=true,
+       residual=delta_magic,
+       projection_error=...)</code></pre>
+              <p>The offset trains a deployable residual helper and is annealed to zero through the curriculum. It must not masquerade as a visual observation.</p>
+            </div>
+          </div>
+
+          <div class="projection-rules">
+            <div><b>Policy input</b><span>Contains only observations, states, and APIs shared by simulation and reality.</span></div>
+            <div><b>Teacher sidecar</b><span>Stores ground truth, Magic Offset, oracle actions, failure causes, and label confidence separately.</span></div>
+            <div><b>Acceptance condition</b><span>Remove the sidecar and roll out again; advance only when the observation-only policy still passes the verifier.</span></div>
+          </div>
+
+          <h3 class="subsection-title">How the projection could apply to other tasks</h3>
+          <div class="task-examples">
+            <article><small>PLACEMENT</small><b>Stable placement</b><p>Ground-truth support surfaces and stable poses produce oracle goals; visual scene reconstruction produces candidates, and a residual teacher supervises final pose refinement.</p></article>
+            <article><small>ARTICULATION</small><b>Doors and drawers</b><p>Ground-truth joint axes and contact points produce feasible trajectories; the student estimates joint state from vision and force and learns when to update a force handler.</p></article>
+            <article><small>OCCLUSION</small><b>Active observation</b><p>A ground-truth visibility graph selects the best camera view; the projected trace instead calls for viewpoint changes and multi-frame fusion from uncertainty.</p></article>
+            <article><small>RECOVERY</small><b>Failure recovery</b><p>Simulation directly provides slip, collision, or missed-grasp causes; the student sees only observable symptoms and learns to reobserve, retract, or stop.</p></article>
+          </div>
+        </section>
+        <p class="closing-copy">Accept the cold start only after a fresh rollout, with the teacher sidecar disabled, passes the same independent verifiers used for ordinary training. The patterns above are proposed designs; this appendix reports no trained-policy or transfer results.</p>
+      </article>
+      <p class="article-references-link"><a href="training.html#cold-start">← Return to Runtime-Trace RL</a></p>
+    </main>
+  </body>
+</html>

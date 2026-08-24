@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · Building the Main Agent's Context</title>
-    <meta name="description" content="Build a cache-friendly multimodal context for Code as Runtime: stable prefixes first, sticky history in the middle, and the latest image last.">
+    <title>Code as Runtime · Context Assembly</title>
+    <meta name="description" content="Code as Runtime Concept v0.1 proposes a cache-aware context order with stable prefixes first and the latest image last. Cache and latency gains are unmeasured.">
     <link rel="alternate" hreflang="en" href="context.html">
     <link rel="alternate" hreflang="zh-CN" href="zh/context.html">
     <link rel="alternate" hreflang="x-default" href="context.html">
@@ -16,7 +16,7 @@
       <div class="nav-tools">
         <nav class="series-nav" aria-label="Code as Runtime article series">
           <a href="./">01 Runtime</a>
-          <a class="active" href="context.html">02 Context</a>
+          <a class="active" aria-current="page" href="context.html">02 Context</a>
           <a href="training.html">03 Runtime RL</a>
           <a href="data.html">04 Real-data SFT</a>
         </nav>
@@ -26,21 +26,23 @@
 
     <main class="candidate-shell">
       <header class="candidate-hero compact context-hero">
-        <p class="eyebrow">Code as Runtime · Context note</p>
-        <h1>What context does the Code as Runtime<br>main Agent receive on each turn?</h1>
-        <p class="lead">This article defines the Code as Runtime wake-up context: what inputs the main Agent receives on every turn, how those inputs are ordered, what remains stable across turns, and why the latest image comes last. The context extends ReAct's interleaved action–observation trajectories<sup class="cite"><a href="references.html#ref-2">[2]</a></sup> and CodeAct's multi-turn execution feedback<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>, while reusing as much multimodal inference cache as possible.</p>
+        <p class="eyebrow">Code as Runtime · Context note · Concept v0.1 · Not peer reviewed</p>
+        <h1>Order context by stability.<br>Put the latest image last.</h1>
+        <p class="lead">Each Agent wake-up mixes fixed policy, slowly changing history, and volatile runtime and sensor state. If volatile content appears early, a strict prefix cache must recompute every block after it. We propose ordering each turn from stable contracts to current runtime state, with the latest image last. This is a design hypothesis; image-token cache hits and latency savings still require measurement on the target inference stack.</p>
       </header>
+
+      <p class="article-references-link">ReAct<sup class="cite"><a href="references.html#ref-2">[2]</a></sup> and CodeAct<sup class="cite"><a href="references.html#ref-3">[3]</a></sup> motivate interleaved action, observation, and execution histories. They do not validate the proposed ordering.</p>
 
       <article class="context-article">
         <section class="context-design-section" aria-labelledby="context-order-heading">
           <header class="section-intro">
             <p class="eyebrow">01 · The exact wake-up context</p>
-            <h2 id="context-order-heading">Context starts with a stable prefix,<br>then unfolds by rate of change.</h2>
+            <h2 id="context-order-heading">Build each turn<br>in eight ordered blocks.</h2>
             <p>Assume the inference service uses a strict prefix cache for multimodal input; SGLang's RadixAttention is a representative implementation of cross-request KV-cache reuse<sup class="cite"><a href="references.html#ref-7">[7]</a></sup>. Only tokens and image content that match exactly from the beginning can be reused. A timestamp, queue remainder, or new image placed too early denies everything after it a cache opportunity. Whether the target service caches image tokens must still be verified with real cache-hit measurements.</p>
           </header>
 
           <figure class="cache-stack-figure">
-            <div class="cache-stack" role="img" aria-label="The main Agent's context ordered from stable prefix to latest image">
+            <div class="cache-stack" role="group" aria-label="The main Agent's context ordered from stable prefix to latest image">
               <div class="cache-layer fixed-layer">
                 <span class="layer-index">00</span>
                 <div><small>EXACT PREFIX · CROSS-EPISODE</small><b>System policy</b><p>Role, methodological boundaries, safety principles, the decision contract, and output semantics for CONTINUE / EMIT / RUN_ANALYSIS / UPDATE_HANDLER.</p></div>
@@ -125,7 +127,7 @@
 
           <div class="history-layout">
             <figure class="history-rail-figure">
-              <div class="history-rail" aria-label="Sticky exponential history-image sampling from past to present">
+              <div class="history-rail" role="group" aria-label="Sticky exponential history-image sampling from past to present">
                 <div class="history-frame anchor-frame"><span>t−64s</span><i></i><b>task start</b><small>event anchor</small></div>
                 <div class="history-frame"><span>t−32s</span><i></i><b>scene layout</b><small>sticky bucket</small></div>
                 <div class="history-frame"><span>t−16s</span><i></i><b>approach</b><small>sticky bucket</small></div>
@@ -159,7 +161,8 @@ You maintain an executable robot runtime.
 Return CONTINUE / EMIT / RUN_ANALYSIS / UPDATE_HANDLER.
 
 &lt;PRIMITIVES_AND_HELPERS sha=8d3…&gt;
-queue.replace_tail(...)  queue.clear(...)
+runtime.submit(QueueUpdate.replace_tail(...))
+runtime.submit(QueueUpdate.truncate(...))
 approach(...)  grasp_chunk(...)  @on_frame(...)
 
 &lt;EPISODE_CONTRACT id=banana_bowl_07&gt;
@@ -203,7 +206,7 @@ Decide whether to keep, emit action, or update runtime.
           </header>
 
           <figure class="budget-figure">
-            <div class="budget-bar" aria-label="Illustrative token shares in a 64k context">
+            <div class="budget-bar" role="img" aria-label="Illustrative token shares in a 64k context">
               <span class="budget-system" style="--share:5"><b>5%</b><small>system</small></span>
               <span class="budget-helpers" style="--share:12"><b>12%</b><small>helpers</small></span>
               <span class="budget-episode" style="--share:4"><b>4%</b><small>task</small></span>
@@ -267,7 +270,7 @@ Decide whether to keep, emit action, or update runtime.
     return blocks</code></pre>
         </section>
       </article>
-      <p class="article-references-link">The cache ordering and sticky visual history described here are system-design proposals from this article; they should not be read as a context optimum already established by the cited work. <a href="references.html">View all references →</a></p>
+      <p class="article-references-link">The first experiment should log prefix version, first changed block, token count, cache hit, and latency on the target inference stack. Until those measurements exist, this ordering remains a hypothesis. <a href="references.html">View all references →</a></p>
     </main>
   </body>
 </html>

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · Runtime Trace RL</title>
-    <meta name="description" content="The complete RL form of Code as Runtime: autoregressive runtime rollouts, executable traces, verifiers, progress rewards, credit assignment, and cold starts.">
+    <title>Code as Runtime · Runtime-Trace RL</title>
+    <meta name="description" content="Code as Runtime Concept v0.1 proposes RL over executed runtime traces with verifier-based credit assignment. The training design has not been evaluated.">
     <link rel="alternate" hreflang="en" href="training.html">
     <link rel="alternate" hreflang="zh-CN" href="zh/training.html">
     <link rel="alternate" hreflang="x-default" href="training.html">
@@ -17,7 +17,7 @@
         <nav class="series-nav" aria-label="Code as Runtime article series">
           <a href="./">01 Runtime</a>
           <a href="context.html">02 Context</a>
-          <a class="active" href="training.html">03 Runtime RL</a>
+          <a class="active" aria-current="page" href="training.html">03 Runtime RL</a>
           <a href="data.html">04 Real-data SFT</a>
         </nav>
         <a class="language-switch" href="zh/training.html" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
@@ -26,16 +26,18 @@
 
     <main class="candidate-shell training-shell">
       <header class="candidate-hero compact training-hero">
-        <p class="eyebrow">Code as Runtime · Runtime Trace RL · 03</p>
-        <h1>Roll out inside the runtime.<br>Run RL over the complete trace.</h1>
-        <p class="lead">The RL object in Code as Runtime is neither a single action nor text detached from execution. It is an executable trajectory jointly produced by the main Agent and runtime: read an observation, choose a decision, write code, call tools, modify the Action Queue, check results, and recover from failure. It draws on executable code-agent traces<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>; CaP-X further demonstrates multi-turn feedback and verifiable-reward RL for embodied coding agents<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>. Building on them, this article discusses outcome, progress, constraint, and cost signals for the full runtime trace.</p>
+        <p class="eyebrow">Code as Runtime · Runtime Trace RL · Concept v0.1 · Not peer reviewed</p>
+        <h1>Train decisions by<br>their executed consequences.</h1>
+        <p class="lead">A reward attached only to the final action gives weak credit to the earlier observations, code edits, queue updates, handlers, and recovery decisions that caused success or failure. Code as Runtime proposes training the high-level Agent on executed traces, using terminal outcome plus verified progress, constraint, validity, recovery, and cost signals. Low-level Action Chunks may still come from existing controllers. This note specifies a training design, not completed RL experiments or measured gains.</p>
       </header>
+
+      <p class="article-references-link">CodeAct<sup class="cite"><a href="references.html#ref-3">[3]</a></sup> motivates executable code-agent traces. CaP-X<sup class="cite"><a href="references.html#ref-8">[8]</a></sup> reports multi-turn feedback and verifiable-reward RL in its embodied coding-agent setting; extending those ideas to Code as Runtime remains untested.</p>
 
       <article class="training-article">
         <section class="training-section" aria-labelledby="rl-shape-heading">
           <header class="section-intro">
             <p class="eyebrow">01 · Optimization object</p>
-            <h2 id="rl-shape-heading">The training object is an executable trace,<br>not only the final action segment.</h2>
+            <h2 id="rl-shape-heading">Optimize the decisions<br>that produce the trace.</h2>
             <p>It resembles the training loop of an executable Code Agent: the model autoregressively writes the next runtime decision, the environment executes code, tools, and actions, and a new observation returns to context. This interleaved reasoning / acting form goes back to ReAct<sup class="cite"><a href="references.html#ref-2">[2]</a></sup>. RL optimizes the closed-loop policy across multiple turns, not merely whether the final action happens to succeed.</p>
           </header>
 
@@ -57,14 +59,73 @@
           </div>
         </section>
 
-        <section class="training-section" aria-labelledby="reward-heading">
-          <header class="section-intro narrow">
-            <p class="eyebrow">02 · Verifiers and credit</p>
-            <h2 id="reward-heading">Final success gives direction.<br>Process rewards assign credit.</h2>
-            <p>A single success reward is too sparse and can encourage simulation shortcuts. A better design preserves an independent outcome verifier while using checkers of varying reliability to describe progress, constraints, calls, and recovery quality.</p>
+        <section class="training-section" aria-labelledby="artifact-teacher-heading">
+          <header class="section-intro">
+            <p class="eyebrow">02 · Runtime action space</p>
+            <h2 id="artifact-teacher-heading">RL chooses actions<br>and runtime code.</h2>
+            <p>The same task can admit multiple correct Action outputs and handler implementations. A rollout can sample candidate code, execute unit tests, inject anomalies, and let verifiers compare success, recoverability, and runtime cost, preventing the main Agent from being locked into one rigid template.</p>
           </header>
 
-          <div class="reward-equation" role="img" aria-label="Illustrative reward composition for Code as Runtime">
+          <div class="artifact-matrix">
+            <div class="artifact-card action">
+              <small>ACTION BUILDER CANDIDATES</small><h3>Normal task actions</h3>
+              <pre><code># equivalent validated requests
+candidates = [
+  QueueUpdate.append(interpolate(keyframes)),
+  QueueUpdate.append(plan_to_pose(goal)),
+  QueueUpdate.append(vla_primitive(goal, horizon=.8))
+]</code></pre>
+              <p>Under the same typed action contract, cover interpolation, motion planning, learned primitives, and different queue mutations.</p>
+            </div>
+            <div class="artifact-card handler">
+              <small>HANDLER CANDIDATES</small><h3>Events and fast responses</h3>
+              <pre><code>@on_force(threshold=12.0, scope="transport", expires="release")
+def guard(obs):
+    emit_event("force-guard")
+    return QueueUpdate.replace(stabilize(obs), reason="force-guard")</code></pre>
+              <p>Cover on-frame, force, tactile, timeout, and tracker-loss handlers while supervising triggers, state lifetime, queue permissions, and exit conditions.</p>
+            </div>
+          </div>
+
+          <div class="handler-curriculum" role="group" aria-label="Handler training flow: normal rollout, inject slip, occlusion, or delay, trigger the handler, update the queue, then grade recovery.">
+            <span>normal rollout</span><i aria-hidden="true">→</i><span>inject slip, occlusion, or delay</span><i aria-hidden="true">→</i><span>handler fires</span><i aria-hidden="true">→</i><span>queue update</span><i aria-hidden="true">→</i><span>verifier grades recovery</span>
+          </div>
+
+          <aside class="training-note cyan">
+            <b>Do not train the Agent to install a handler by default.</b>
+            <p>Training must include negative examples: do not install a handler when no low-latency response is needed; remove an expired handler; leave the queue alone when a simple CONTINUE is enough. Otherwise, the model will hide uncertainty behind an increasingly complex runtime.</p>
+          </aside>
+        </section>
+
+        <section class="training-section" aria-labelledby="teacher-heading">
+          <header class="section-intro">
+            <p class="eyebrow">03 · Rollout and optimization loop</p>
+            <h2 id="teacher-heading">Execute every<br>sampled decision.</h2>
+            <p>A training turn starts from a replayable runtime state, samples an Agent decision, executes it to produce the next observation, and lets independent verifiers write back rewards and failure endpoints. SFT and privileged solvers provide only the initial state distribution; the main data should gradually shift toward on-policy rollouts.</p>
+          </header>
+
+          <div class="teacher-ladder">
+            <article><span>00</span><div><small>INITIAL STATE</small><h3>Start from a replayable runtime snapshot</h3><p>Load the task, causal observation, Action Queue, active handlers, and recent events through the same state interface used in deployment.</p></div><b>RESET</b></article>
+            <article><span>01</span><div><small>POLICY SAMPLE</small><h3>Autoregressively generate the next decision</h3><p>Sample CONTINUE, analysis, code, an action call, or a handler update instead of reading an oracle action directly.</p></div><b>ACT</b></article>
+            <article><span>02</span><div><small>RUNTIME EXECUTION</small><h3>Let the output have real consequences</h3><p>Run code, consume the Action Queue, trigger handlers, and write stdout, anomalies, sensors, and progress back into the trace.</p></div><b>STEP</b></article>
+            <article><span>03</span><div><small>VERIFIER PASS</small><h3>Grade structured endpoints</h3><p>Independently check outcome, state progress, safety constraints, call validity, recovery quality, and runtime cost.</p></div><b>GRADE</b></article>
+            <article><span>04</span><div><small>CREDIT ASSIGNMENT</small><h3>Assign rewards to relevant decisions</h3><p>Combine terminal return, progress differences, and endpoint labels to distinguish observation errors, code errors, and execution failures.</p></div><b>UPDATE</b></article>
+            <article><span>05</span><div><small>CURRICULUM MIX</small><h3>Expand the state and failure distributions</h3><p>Mix success, recovery, fault injection, and real-robot calibration rollouts while gradually reducing offline demonstrations and privileged interventions.</p></div><b>EXPAND</b></article>
+          </div>
+        </section>
+
+        <!-- cold-start-summary:start -->
+        <aside id="cold-start" class="data-principle"><b>Optional bootstrap, separate contract</b><p>Cold start may use privileged teachers only through a sidecar. Policy input must remain deployment-visible, and acceptance requires a fresh observation-only rollout after the sidecar is removed. <a href="cold-start.html">Read the privileged-teacher appendix →</a></p></aside>
+        <!-- cold-start-summary:end -->
+
+        <section class="training-section" aria-labelledby="reward-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">04 · Verifiers and credit</p>
+            <h2 id="reward-heading">Combine terminal success<br>with verified process signals.</h2>
+            <p>Keep an independent outcome verifier, then add checkers for progress, constraints, calls, and recovery. Record each checker's reliability.</p>
+          </header>
+
+          <div class="reward-equation" role="img" aria-label="Example reward: R of trace equals outcome plus change in progress plus endpoint checks, minus violations and runtime cost.">
             <span>R(trace)</span><b>=</b><em>outcome</em><b>+</b><em>Δ progress</em><b>+</b><em>endpoint checks</em><b>−</b><em>violations</em><b>−</b><em>runtime cost</em>
           </div>
 
@@ -83,115 +144,9 @@
           </aside>
         </section>
 
-        <section class="training-section" aria-labelledby="teacher-heading">
-          <header class="section-intro">
-            <p class="eyebrow">03 · Rollout and optimization loop</p>
-            <h2 id="teacher-heading">Every RL turn must execute,<br>not merely receive a text critique.</h2>
-            <p>A training turn starts from a replayable runtime state, samples an Agent decision, executes it to produce a real observation, and lets independent verifiers write back rewards and failure endpoints. SFT and privileged solvers provide only the initial state distribution; the main data should gradually shift toward on-policy rollouts.</p>
-          </header>
-
-          <div class="teacher-ladder">
-            <article><span>00</span><div><small>INITIAL STATE</small><h3>Start from a replayable runtime snapshot</h3><p>Load the task, causal observation, Action Queue, active handlers, and recent events through the same state interface used in deployment.</p></div><b>RESET</b></article>
-            <article><span>01</span><div><small>POLICY SAMPLE</small><h3>Autoregressively generate the next decision</h3><p>Sample CONTINUE, analysis, code, an action call, or a handler update instead of reading an oracle action directly.</p></div><b>ACT</b></article>
-            <article><span>02</span><div><small>RUNTIME EXECUTION</small><h3>Let the output have real consequences</h3><p>Run code, consume the Action Queue, trigger handlers, and write stdout, anomalies, sensors, and progress back into the trace.</p></div><b>STEP</b></article>
-            <article><span>03</span><div><small>VERIFIER PASS</small><h3>Grade structured endpoints</h3><p>Independently check outcome, state progress, safety constraints, call validity, recovery quality, and runtime cost.</p></div><b>GRADE</b></article>
-            <article><span>04</span><div><small>CREDIT ASSIGNMENT</small><h3>Assign rewards to relevant decisions</h3><p>Combine terminal return, progress differences, and endpoint labels to distinguish observation errors, code errors, and execution failures.</p></div><b>UPDATE</b></article>
-            <article><span>05</span><div><small>CURRICULUM MIX</small><h3>Expand the state and failure distributions</h3><p>Mix success, recovery, fault injection, and real-robot calibration rollouts while gradually reducing offline demonstrations and privileged interventions.</p></div><b>EXPAND</b></article>
-          </div>
-        </section>
-
-        <section class="training-section" aria-labelledby="projection-heading">
-          <header class="section-intro narrow">
-            <p class="eyebrow">04 · Cold start: privileged projection</p>
-            <h2 id="projection-heading">Ground truth may help solve the task.<br>Its source must never be fabricated.</h2>
-            <p>Before the policy can roll out reliably, simulation ground truth can provide feasible solutions and checking labels for a cold start ahead of RL. But a trace that claims the vision system derived an exact value it never observed creates an undeployable causal shortcut. The right goal is deployment-shaped initialization, not long-term replacement of on-policy exploration by an oracle.</p>
-          </header>
-
-          <div class="grasp-projection">
-            <div class="projection-column oracle">
-              <small>PRIVILEGED ORACLE</small><h3>Solve a grasp from mesh ground truth</h3>
-              <pre><code>mesh_gt = sim.object_mesh(id)
-pose_gt = sim.object_pose(id)
-g_star = antipodal_grasp(mesh_gt, pose_gt)
-execute(g_star)</code></pre>
-              <p>It answers “what feasible solution exists” and supplies collision, contact, and terminal-success labels.</p>
-            </div>
-            <div class="projection-arrow" aria-hidden="true">→</div>
-            <div class="projection-column visible">
-              <small>DEPLOYMENT-SHAPED TRACE</small><h3>Produce candidates from visual representations</h3>
-              <pre><code>mesh_hat = reconstruct(multiview_rgbd)
-g_vis = propose_grasp(mesh_hat)
-residual = refine_grasp(obs, g_vis)
-queue.push(grasp_chunk(g_vis + residual))</code></pre>
-              <p>The main Agent calls only perception and refinement helpers available at deployment.</p>
-            </div>
-            <div class="projection-arrow" aria-hidden="true">→</div>
-            <div class="projection-column audit">
-              <small>TEACHER RESIDUAL</small><h3>Use the Magic Offset only as scaffolding</h3>
-              <pre><code>delta_magic = g_star - g_vis
-label(refine_grasp, delta_magic)
-record(privileged=true,
-       residual=delta_magic,
-       projection_error=...)</code></pre>
-              <p>The offset trains a deployable residual helper and is annealed to zero through the curriculum. It must not masquerade as a visual observation.</p>
-            </div>
-          </div>
-
-          <div class="projection-rules">
-            <div><b>Policy input</b><span>Contains only observations, states, and APIs shared by simulation and reality.</span></div>
-            <div><b>Teacher sidecar</b><span>Stores ground truth, Magic Offset, oracle actions, failure causes, and label confidence separately.</span></div>
-            <div><b>Acceptance condition</b><span>Remove the sidecar and roll out again; advance only when the observation-only policy still passes the verifier.</span></div>
-          </div>
-
-          <h3 class="subsection-title">The same projection method extends to more tasks</h3>
-          <div class="task-examples">
-            <article><small>PLACEMENT</small><b>Stable placement</b><p>Ground-truth support surfaces and stable poses produce oracle goals; visual scene reconstruction produces candidates, and a residual teacher supervises final pose refinement.</p></article>
-            <article><small>ARTICULATION</small><b>Doors and drawers</b><p>Ground-truth joint axes and contact points produce feasible trajectories; the student estimates joint state from vision and force and learns when to update a force handler.</p></article>
-            <article><small>OCCLUSION</small><b>Active observation</b><p>A ground-truth visibility graph selects the best camera view; the projected trace instead calls for viewpoint changes and multi-frame fusion from uncertainty.</p></article>
-            <article><small>RECOVERY</small><b>Failure recovery</b><p>Simulation directly provides slip, collision, or missed-grasp causes; the student sees only observable symptoms and learns to reobserve, retract, or stop.</p></article>
-          </div>
-        </section>
-
-        <section class="training-section" aria-labelledby="artifact-teacher-heading">
-          <header class="section-intro">
-            <p class="eyebrow">05 · Runtime action space</p>
-            <h2 id="artifact-teacher-heading">RL explores not only what to do,<br>but also how the runtime should be written.</h2>
-            <p>The same task can admit multiple correct Action outputs and handler implementations. A rollout can sample candidate code, execute unit tests, inject anomalies, and let verifiers compare success, recoverability, and runtime cost, preventing the main Agent from being locked into one rigid template.</p>
-          </header>
-
-          <div class="artifact-matrix">
-            <div class="artifact-card action">
-              <small>ACTION BUILDER CANDIDATES</small><h3>Normal task actions</h3>
-              <pre><code># equivalent valid implementations
-queue.push(interpolate(keyframes))
-queue.push(plan_to_pose(goal))
-queue.push(vla_primitive(goal, horizon=.8))</code></pre>
-              <p>Under the same typed action contract, cover interpolation, motion planning, learned primitives, and different queue mutations.</p>
-            </div>
-            <div class="artifact-card handler">
-              <small>HANDLER CANDIDATES</small><h3>Events and fast responses</h3>
-              <pre><code>@on_force(threshold=12.0)
-def guard(obs, queue):
-    queue.truncate(after="inflight")
-    queue.push(stabilize(obs))
-    emit_event("force-guard")</code></pre>
-              <p>Cover on-frame, force, tactile, timeout, and tracker-loss handlers while supervising triggers, state lifetime, queue permissions, and exit conditions.</p>
-            </div>
-          </div>
-
-          <div class="handler-curriculum" role="img" aria-label="Handler fault-injection, execution, and grading process">
-            <span>normal rollout</span><i>→</i><span>inject slip / occlusion / delay</span><i>→</i><span>handler fires</span><i>→</i><span>queue mutation</span><i>→</i><span>verifier grades recovery</span>
-          </div>
-
-          <aside class="training-note cyan">
-            <b>Full capability does not mean a handler should be written every time.</b>
-            <p>Training must include negative examples: do not install a handler when no low-latency response is needed; remove an expired handler; leave the queue alone when a simple CONTINUE is enough. Otherwise, the model will hide uncertainty behind an increasingly complex runtime.</p>
-          </aside>
-        </section>
-
         <section class="training-section" aria-labelledby="cap-curriculum-heading">
           <header class="section-intro narrow">
-            <p class="eyebrow">06 · CAP-derived curriculum</p>
+            <p class="eyebrow">05 · CAP-derived curriculum</p>
             <h2 id="cap-curriculum-heading">Inject faults at every supervised endpoint<br>so recovery becomes routine training data.</h2>
             <p>The direct lesson from CaP-X / CaP-RL is that embodied coding agents can improve under execution feedback and verifiable rewards<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>. Code as Runtime further treats goals, observations, constraints, calls, states, and recovery in the explicit trace as fault-injection endpoints instead of merely adding more successful demonstrations.</p>
           </header>
@@ -214,9 +169,9 @@ def guard(obs, queue):
 
         <section class="training-section closing-section" aria-labelledby="exit-heading">
           <header class="section-intro">
-            <p class="eyebrow">07 · RL acceptance conditions</p>
-            <h2 id="exit-heading">RL works only if the policy<br>improves during execution.</h2>
-            <p>The primary acceptance target is on-policy performance of the observation-only policy, not teacher rollouts or offline token loss. Along with terminal success, verifier calibration, recovery coverage, policy entropy, runtime cost, and real-robot transfer must improve together.</p>
+            <p class="eyebrow">06 · RL acceptance conditions</p>
+            <h2 id="exit-heading">Accept the policy on<br>observation-only rollouts.</h2>
+            <p>Judge the observation-only policy on on-policy rollouts. Report terminal success together with verifier calibration, recovery coverage, policy entropy, runtime cost, and real-robot transfer. Do not substitute teacher success or offline token loss.</p>
           </header>
 
           <div class="exit-grid">
@@ -228,10 +183,10 @@ def guard(obs, queue):
             <div><b>Real-robot transfer</b><span>After sharing the interface, how much perception, contact, latency, and calibration gap remains?</span></div>
           </div>
 
-          <p class="closing-copy">The core of this RL route is to have the Agent continually produce, execute, and revise traces inside a deployment-shaped runtime, then use calibrated verifiers to attribute environmental consequences to specific decisions. Teachers, simulation ground truth, and Magic Offset are only scaffolding into this loop. The policy actually optimized and ultimately deployed is an on-policy Agent that depends only on visible observations and callable runtime APIs.</p>
+          <p class="closing-copy">Execute each Agent decision through the same runtime interface intended for deployment, then assign reward from the resulting state change. Teachers and simulation ground truth may initialize training, but the accepted policy must depend only on visible observations and callable runtime APIs.</p>
         </section>
       </article>
-      <p class="article-references-link">The reward decomposition, teacher curriculum, and endpoint fault injection proposed here remain training designs awaiting experimental validation. <a href="references.html">View all references →</a></p>
+      <p class="article-references-link"><a href="references.html">View all references →</a></p>
     </main>
   </body>
 </html>

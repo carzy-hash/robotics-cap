@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Code as Runtime · 特权教师冷启动</title>
+    <meta name="description" content="Code as Runtime 概念版 v0.1 提出严格隔离输入的特权教师冷启动方案。本文未报告训练后策略或迁移结果。">
+    <link rel="alternate" hreflang="en" href="../cold-start.html">
+    <link rel="alternate" hreflang="zh-CN" href="cold-start.html">
+    <link rel="alternate" hreflang="x-default" href="../cold-start.html">
+    <link rel="stylesheet" href="../styles.css?v=training-note">
+  </head>
+  <body class="training-page">
+    <header class="candidate-nav">
+      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent 编写的机器人运行时</span></a>
+      <div class="nav-tools">
+        <nav class="series-nav" aria-label="Code as Runtime 系列文章">
+          <a href="./">01 运行时</a><a href="context.html">02 上下文</a><a href="training.html" aria-current="location">03 运行时 RL</a><a href="data.html">04 真机数据 SFT</a>
+        </nav>
+        <a class="language-switch" href="../cold-start.html" hreflang="en" lang="en" aria-label="Read in English">English</a>
+      </div>
+    </header>
+    <main class="candidate-shell training-shell">
+      <header class="candidate-hero compact training-hero">
+        <p class="eyebrow">Code as Runtime · 训练附录 · 概念版 v0.1 · 未经同行评审</p>
+        <h1>特权教师只用于初始化。</h1>
+        <p class="lead">当策略还无法产生有效的在线采样轨迹时，这套可选方法可用于初始化。特权信号可以标注仅由部署时可见输入构建的轨迹，但不得进入策略输入。评估策略前，必须移除特权附属数据。</p>
+      </header>
+      <article class="training-article">
+        <section class="training-section" aria-labelledby="projection-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">附录 · 特权信息投影</p>
+            <h2 id="projection-heading">特权目标不得进入<br>策略输入。</h2>
+            <p>在策略尚不能稳定执行在线采样时，仿真真值可以为强化学习前的冷启动提供可行解和检查标签。但如果轨迹声称视觉系统推导出了它从未观察到的精确量，就会制造不可部署的因果捷径。目标是按部署输入形态完成初始化，而不是让特权求解器长期替代在线探索。</p>
+          </header>
+
+          <div class="grasp-projection">
+            <div class="projection-column oracle">
+              <small>特权求解器</small><h3>从 mesh GT 求解抓取</h3>
+              <pre><code>mesh_gt = sim.object_mesh(id)
+pose_gt = sim.object_pose(id)
+g_star = antipodal_grasp(mesh_gt, pose_gt)
+execute(g_star)</code></pre>
+              <p>它负责回答“存在什么可行解”，并提供碰撞、接触与最终成功标签。</p>
+            </div>
+            <div class="projection-arrow" aria-hidden="true">→</div>
+            <div class="projection-column visible">
+              <small>部署同构轨迹</small><h3>从视觉表征产生候选</h3>
+              <pre><code>mesh_hat = reconstruct(multiview_rgbd)
+g_vis = propose_grasp(mesh_hat)
+residual = refine_grasp(obs, g_vis)
+runtime.submit(QueueUpdate.append(grasp_chunk(g_vis + residual)))</code></pre>
+              <p>主 Agent 只调用部署时可用的感知和细化辅助函数。</p>
+            </div>
+            <div class="projection-arrow" aria-hidden="true">→</div>
+            <div class="projection-column audit">
+              <small>教师残差</small><h3>Magic Offset 只用于冷启动监督</h3>
+              <pre><code>delta_magic = g_star - g_vis
+label(refine_grasp, delta_magic)
+record(privileged=true,
+       residual=delta_magic,
+       projection_error=...)</code></pre>
+              <p>该偏移用于训练可部署的残差辅助函数，并在课程中逐步归零；它不能伪装成视觉观测。</p>
+            </div>
+          </div>
+
+          <div class="projection-rules">
+            <div><b>策略输入</b><span>只包含仿真和真机都可获得的观测、状态与 API。</span></div>
+            <div><b>教师侧附属数据</b><span>单独保存真值、Magic Offset、特权动作、失败原因和标签置信度。</span></div>
+            <div><b>验收条件</b><span>撤掉附属数据后重新执行；只有仅依赖观测的策略仍通过验证器，才能进入下一阶段。</span></div>
+          </div>
+
+          <h3 class="subsection-title">这种投影方法可能如何用于其他任务</h3>
+          <div class="task-examples">
+            <article><small>放置</small><b>稳定放置</b><p>真值支撑面和稳定姿态产生特权目标；视觉场景重建产生候选，残差教师监督最终姿态细化。</p></article>
+            <article><small>关节机构</small><b>门与抽屉</b><p>真值关节轴和接触点产生可行轨迹；策略从视觉与力反馈估计关节状态，并学习何时更新力反馈处理器。</p></article>
+            <article><small>遮挡</small><b>主动观察</b><p>真值可见性图选择最佳相机位；投影轨迹则根据不确定度调用视角切换和多帧融合。</p></article>
+            <article><small>恢复</small><b>失败恢复</b><p>仿真直接给出滑动、碰撞或抓取失败的原因；策略只看到可观测症状，并学习重新观察、回撤或停止。</p></article>
+          </div>
+        </section>
+        <p class="closing-copy">只有关闭教师附属数据后，新执行的轨迹仍能通过普通训练所用的独立验证器，冷启动才能通过验收。以上模式均为设计提案；本附录未报告训练后策略或迁移结果。</p>
+      </article>
+      <p class="article-references-link"><a href="training.html#cold-start">← 返回运行时轨迹 RL</a></p>
+    </main>
+  </body>
+</html>

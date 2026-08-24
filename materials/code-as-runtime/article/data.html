@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · Real-data Trace SFT</title>
-    <meta name="description" content="Project continuous, multi-rate real-robot recordings into causal, replayable asynchronous traces ready for Code as Runtime SFT.">
+    <title>Code as Runtime · Real-Data SFT</title>
+    <meta name="description" content="Code as Runtime Concept v0.1 proposes projecting continuous robot recordings into causally valid SFT turns. Replay fidelity and policy performance are unmeasured.">
     <link rel="alternate" hreflang="en" href="data.html">
     <link rel="alternate" hreflang="zh-CN" href="zh/data.html">
     <link rel="alternate" hreflang="x-default" href="data.html">
@@ -18,7 +18,7 @@
           <a href="./">01 Runtime</a>
           <a href="context.html">02 Context</a>
           <a href="training.html">03 Runtime RL</a>
-          <a class="active" href="data.html">04 Real-data SFT</a>
+          <a class="active" href="data.html" aria-current="page">04 Real-data SFT</a>
         </nav>
         <a class="language-switch" href="zh/data.html" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
       </div>
@@ -26,17 +26,19 @@
 
     <main class="candidate-shell data-shell">
       <header class="candidate-hero compact data-hero">
-        <p class="eyebrow">Code as Runtime · Real-data Trace SFT · 04</p>
-        <h1>Turn real-robot recordings<br>into learnable Runtime Traces.</h1>
-        <p class="lead">This article covers real-data SFT for Code as Runtime: how to turn the multi-camera video, joints, force, tactile signals, and actions left by one continuous demonstration into context → decision examples that the main Agent can learn autoregressively. DROID<sup class="cite"><a href="references.html#ref-10">[10]</a></sup> and Open X-Embodiment<sup class="cite"><a href="references.html#ref-11">[11]</a></sup> represent foundations for large-scale real-robot trajectories and standardized data. This article focuses on the next layer: reconstructing each turn's causal context, Action Queue, and executable target decision.</p>
+        <p class="eyebrow">Code as Runtime · Real-data Trace SFT · Concept v0.1 · Not peer reviewed</p>
+        <h1>Project continuous recordings<br>into causal runtime turns.</h1>
+        <p class="lead">Real-robot demonstrations record continuous sensor and action streams, not the causal turn-level decisions that Code as Runtime must learn. Naive slicing can leak future frames, ignore inference latency, or rewrite actions that the robot has already executed. We propose replaying each episode on a calibrated timeline and projecting it into context → decision pairs with explicit queue state, source provenance, and replay checks. The projected dataset and a trained policy have not been evaluated.</p>
       </header>
+
+      <p class="article-references-link">DROID<sup class="cite"><a href="references.html#ref-10">[10]</a></sup> and Open X-Embodiment<sup class="cite"><a href="references.html#ref-11">[11]</a></sup> provide real-robot trajectories and standardized formats. Neither validates this projector.</p>
 
       <article class="data-article">
         <section class="data-section" aria-labelledby="projection-objective-heading">
           <header class="section-intro">
             <p class="eyebrow">01 · SFT projection objective</p>
-            <h2 id="projection-objective-heading">First preserve what happened.<br>Then construct the next supervised turn.</h2>
-            <p>Raw data is an immutable fact layer; an SFT example is one assumption-bearing causal projection of it. The projector must explicitly choose the Agent wake time, inference latency, visible observations, queue state, and target decision, ultimately producing a deployment-isomorphic context → Agent output without silently writing future information back into the input.</p>
+            <h2 id="projection-objective-heading">Keep raw records separate<br>from projected turns.</h2>
+            <p>Raw recordings are fixed evidence. Building an SFT example requires explicit choices about Agent wake time, inference latency, visible observations, queue state, and target decision. The projector must record those choices and must never copy future information into policy input.</p>
           </header>
 
           <figure class="projection-pipeline" aria-label="Projection pipeline from continuous recordings to Code as Runtime training views">
@@ -56,7 +58,7 @@
         <section class="data-section" aria-labelledby="ledger-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">02 · Canonical event ledger</p>
-            <h2 id="ledger-heading">First align streams at different rates<br>onto one event ledger.</h2>
+            <h2 id="ledger-heading">Align every stream<br>on one episode clock.</h2>
             <p>Video frames, control commands, actual robot motion, and contact feedback do not arrive simultaneously. Open X-Embodiment demonstrates the importance of a unified format across embodiments<sup class="cite"><a href="references.html#ref-11">[11]</a></sup>. Here, each stream must also preserve its source timestamp before establishing a calibrated episode clock; otherwise, a seemingly plausible turn may already use an image that had not yet arrived.</p>
           </header>
 
@@ -104,7 +106,7 @@
         <section class="data-section" aria-labelledby="action-code-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">04 · From motion to runtime decisions</p>
-            <h2 id="action-code-heading">Not every trajectory segment deserves<br>to be explained as code.</h2>
+            <h2 id="action-code-heading">Keep direct Action Chunks<br>when code fails replay.</h2>
             <p>Demo2Code explores two-stage synthesis from demonstration summaries to executable robot code<sup class="cite"><a href="references.html#ref-9">[9]</a></sup>. Here, dense actions are first segmented by contact, curvature, speed, and task stage, then reconstructed with restricted primitives. Low-curvature, non-contact segments are often suitable for compression into code; contact-rich or poorly fitted segments remain ACT-like Action Chunks<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>. Convert only when conversion works: retain a real chunk rather than manufacture elegant but incorrect code.</p>
           </header>
 
@@ -124,11 +126,65 @@
           </div>
         </section>
 
+        <section class="data-section" aria-labelledby="schema-heading">
+          <header class="section-intro narrow">
+            <p class="eyebrow">05 · Proposed minimum trace shape</p>
+            <h2 id="schema-heading">One episode trace yields<br>many SFT examples.</h2>
+            <p>Each turn uses context available before <code>available_until</code> as input and records when the decision takes effect. Queue snapshots at wake, commit, and after-update preserve what became irrevocable during inference. Tool results and executor events enter the next context. This is a proposed minimum shape, not a stable schema.</p>
+          </header>
+
+          <div class="schema-layout">
+            <pre class="trace-schema"><code>{
+  "episode_id": "banana_0042",
+  "trace_id": "banana-demo-01",
+  "clock": {"unit": "ns", "sync_version": "ptp-v3"},
+  "media_manifest": "media/manifest.json",
+  "turns": [{
+    "wake_ts": 3120000000,
+    "available_until": 3114000000,
+    "decision_commit_ts": 3238000000,
+    "context_refs": {
+      "latest": "media/cam0/003114.jpg",
+      "history": ["media/cam1/001020.jpg"],
+      "sensor_window": "sensors/003000-003114.arrow",
+      "ledger_events": ["cam0:3114", "force:3112-3114"]
+    },
+    "queue_at_wake": {"executed": 31, "remaining": 47},
+    "queue_at_commit": {"irrevocable": 35, "remaining": 43},
+    "decision": {"type": "EMIT", "mutation": "replace_tail"},
+    "program": {"language": "runtime_ops_v2", "ops": [...]},
+    "action_ref": "chunks/grasp_02.npy",
+    "executor_events": [...],
+    "queue_after_update": {"preserved_prefix": 35, "remaining": 29},
+    "privileged_sidecar": "sidecar/turn_02.json",
+    "labels": {"success": true, "replay_rmse": 0.008},
+    "provenance": {
+      "decision": {"source": "projected", "method": "phase+replay-v1", "confidence": 0.91},
+      "action": {"source": "recorded", "method": "command-log", "confidence": 1.0}
+    }
+  }]
+}</code></pre>
+            <div class="schema-notes">
+              <div><small>CAUSAL BOUNDARY</small><b><code>available_until</code></b><p>Every policy input must be provably available before this time.</p></div>
+              <div><small>QUEUE CONSISTENCY</small><b><code>queue_at_wake / commit / after_update</code></b><p>Preserves the irrevocable prefix and makes every update replayable offline.</p></div>
+              <div><small>OBSERVABLE REASONING</small><b><code>decision / program / events</code></b><p>Supervises explicit decisions and execution results instead of assuming one hidden chain of thought.</p></div>
+              <div><small>PROVENANCE</small><b><code>recorded / derived / projected</code></b><p>Marks every field as coming from raw records, deterministic computation, or teacher synthesis.</p></div>
+            </div>
+          </div>
+
+          <div class="training-views">
+            <article><small>PRIMARY VIEW</small><b>SFT next decision</b><p>Input causal context; supervise decision, program, tool call, and queue mutation.</p></article>
+            <article><small>DERIVED VIEW</small><b>Preference</b><p>Compare wrong queue edits with a more economical CONTINUE among filtered candidates.</p></article>
+            <article><small>DERIVED VIEW</small><b>Verifier</b><p>Reuse progress, constraint, failure-endpoint, recovery, and final-outcome labels.</p></article>
+            <article><small>HANDOFF TO 03</small><b>RL initial state</b><p>Pass the proposed runtime snapshot to the Runtime RL loop rather than treating it as more offline SFT.</p></article>
+          </div>
+        </section>
+
         <section class="data-section" aria-labelledby="banana-projection-heading">
           <header class="section-intro">
-            <p class="eyebrow">05 · Worked projection</p>
+            <p class="eyebrow">06 · Worked projection</p>
             <h2 id="banana-projection-heading">How does one banana demonstration<br>become six training turns?</h2>
-            <p>The raw episode contains only continuous motion and sensor streams. The projector combines stage boundaries, replay fitting, queue capacity, and causal visibility to construct a decision trace that could actually occur during deployment. The table also marks what comes from recording and what is auditable synthesis.</p>
+            <p><code>banana-demo-01</code> is the offline projection view of the <a href="./">Runtime note's</a> execution example. The raw episode contains only continuous motion and sensor streams; this table shows how the projector adds turn boundaries, replay checks, queue state, and auditable provenance.</p>
           </header>
 
           <div class="banana-trace-table">
@@ -142,52 +198,6 @@
           </div>
 
           <aside class="data-principle cyan"><b>A plausible explanation is not enough; it must replay.</b><p>Re-expand every code-built chunk and compare it with the actual trajectory. Check that every queue mutation preserves the executed prefix. Verify that every CONTINUE leaves enough queue to reach the next turn. Turns that fail these checks do not enter the high-confidence SFT set.</p></aside>
-        </section>
-
-        <section class="data-section" aria-labelledby="schema-heading">
-          <header class="section-intro narrow">
-            <p class="eyebrow">06 · From canonical trace to SFT pairs</p>
-            <h2 id="schema-heading">One episode trace unfolds<br>into multi-turn SFT examples.</h2>
-            <p>Each turn uses context before <code>available_until</code> as input and the Agent's decision, program, and queue mutation as primary supervision. Tool results and executor events enter the next context. The data does not preserve an invisible “complete inner monologue”; it supervises observable, executable, and verifiable structured decisions.</p>
-          </header>
-
-          <div class="schema-layout">
-            <pre class="trace-schema"><code>{
-  "episode_id": "banana_0042",
-  "clock": {"unit": "ns", "sync_version": "ptp-v3"},
-  "media_manifest": "media/manifest.json",
-  "turns": [{
-    "wake_ts": 3120000000,
-    "available_until": 3114000000,
-    "context_refs": {
-      "latest": "media/cam0/003114.jpg",
-      "history": ["media/cam1/001020.jpg"],
-      "sensor_window": "sensors/003000-003114.arrow"
-    },
-    "queue_before": {"executed": 31, "remaining": 47},
-    "decision": {"type": "EMIT", "mutation": "replace_tail"},
-    "program": {"language": "runtime_ops_v2", "ops": [...]},
-    "action_ref": "chunks/grasp_02.npy",
-    "executor_events": [...],
-    "queue_after": {"preserved_prefix": 31, "remaining": 29},
-    "labels": {"success": true, "replay_rmse": 0.008},
-    "provenance": {"decision": "projected", "action": "recorded"}
-  }]
-}</code></pre>
-            <div class="schema-notes">
-              <div><small>CAUSAL BOUNDARY</small><b><code>available_until</code></b><p>Every policy input must be provably available before this time.</p></div>
-              <div><small>QUEUE CONSISTENCY</small><b><code>queue_before / after</code></b><p>Makes append, truncate, and replace-tail operations replayable offline.</p></div>
-              <div><small>OBSERVABLE REASONING</small><b><code>decision / program / events</code></b><p>Supervises explicit decisions and execution results instead of assuming one hidden chain of thought.</p></div>
-              <div><small>PROVENANCE</small><b><code>recorded / derived / projected</code></b><p>Marks every field as coming from raw records, deterministic computation, or teacher synthesis.</p></div>
-            </div>
-          </div>
-
-          <div class="training-views">
-            <article><small>PRIMARY VIEW</small><b>SFT next decision</b><p>Input causal context; supervise decision, program, tool call, and queue mutation.</p></article>
-            <article><small>DERIVED VIEW</small><b>Preference</b><p>Compare wrong queue edits with a more economical CONTINUE among filtered candidates.</p></article>
-            <article><small>DERIVED VIEW</small><b>Verifier</b><p>Reuse progress, constraint, failure-endpoint, recovery, and final-outcome labels.</p></article>
-            <article><small>HANDOFF TO 03</small><b>RL initial state</b><p>Pass the canonical runtime snapshot to the third article's on-policy rollout rather than treating it as more offline SFT.</p></article>
-          </div>
         </section>
 
         <section class="data-section closing-section" aria-labelledby="audit-heading">
@@ -208,10 +218,10 @@
             <div><b>Projection confidence</b><span>Are low-confidence synthesized fields downweighted, reviewed, or excluded from SFT?</span></div>
           </div>
 
-          <p class="closing-copy">The direct output of this data pipeline is multi-turn SFT that is isomorphic to the deployment runtime: input contains only context genuinely visible at that time, and the target contains only the next executable Agent decision. RL can later reuse the same schema for continued rollout, but the primary success criterion for Real-data SFT remains that the world in each training example matches the world that actually existed during collection.</p>
+          <p class="closing-copy">The proposed pipeline should produce multi-turn SFT in which every input was available at that turn and every target is the next executable Agent decision. RL may reuse the same trace shape. For SFT, replay each turn and confirm that its context, queue state, and target match the recorded episode. Causal visibility and replay fidelity remain evaluation targets, not established results.</p>
         </section>
       </article>
-      <p class="article-references-link">The pseudo-time trace projector, code-replay error threshold, and recorded / derived / projected provenance are data recipes proposed in this article. <a href="references.html">View all references →</a></p>
+      <p class="article-references-link">Before using these traces for training, report causal-audit pass rate, replay error by segment type, and the confidence distribution of projected fields. No projected dataset or trained-policy result is reported here. <a href="references.html">View all references →</a></p>
     </main>
   </body>
 </html>

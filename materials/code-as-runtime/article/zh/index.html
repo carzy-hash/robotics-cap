@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · Agent 编写机器人运行时</title>
-    <meta name="description" content="Code as Runtime：主 Agent 持续编写和修改动作构建代码与事件处理代码，让同一套机器人运行时跨越多轮决策。">
+    <title>Code as Runtime · 运行时架构</title>
+    <meta name="description" content="Code as Runtime 概念版 v0.1 提出一种由 Agent 编写 Action Chunk 和事件处理器的机器人运行时。完整设计尚未评估。">
     <link rel="alternate" hreflang="en" href="../">
     <link rel="alternate" hreflang="zh-CN" href="./">
     <link rel="alternate" hreflang="x-default" href="../">
@@ -12,13 +12,13 @@
   </head>
   <body class="nervous-page">
     <header class="candidate-nav">
-      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent 编写的机器人运行时</span></a>
       <div class="nav-tools">
         <nav class="series-nav" aria-label="Code as Runtime 系列文章">
-          <a class="active" href="./">01 Runtime</a>
-          <a href="context.html">02 Context</a>
-          <a href="training.html">03 Runtime RL</a>
-          <a href="data.html">04 Real-data SFT</a>
+          <a class="active" aria-current="page" href="./">01 运行时</a>
+          <a href="context.html">02 上下文</a>
+          <a href="training.html">03 运行时 RL</a>
+          <a href="data.html">04 真机数据 SFT</a>
         </nav>
         <a class="language-switch" href="../" hreflang="en" lang="en" aria-label="Read in English">English</a>
       </div>
@@ -26,13 +26,13 @@
 
     <main class="candidate-shell">
       <header class="candidate-hero compact">
-        <p class="eyebrow">Code as Runtime · Architecture note</p>
-        <h1>Agent 通过代码，<br>维护机器人运行时。</h1>
-        <p class="lead">Code as Runtime 把模型输出从一次性的 action 或 program，变成可持续执行、观察和改写的控制层。每轮决策中，主 Agent 可以运行代码构建 Action Chunk，也可以安装按频率或事件触发的 handler；两类代码跨越决策周期，共同维护机器人正在消费的 Action Queue。它继承 Code as Policies 的机器人策略代码<sup class="cite"><a href="references.html#ref-1">[1]</a></sup>与 CodeAct 的多轮可执行代码动作<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>，并把它们放入持续消费动作的异步 runtime。</p>
+        <p class="eyebrow">Code as Runtime · 架构札记 · 概念版 v0.1 · 未经同行评审</p>
+        <h1>让机器人控制在 Agent<br>两次决策之间持续运行。</h1>
+        <p class="lead">现有代码生成式机器人策略通常只输出一次动作或一段程序，缺少在模型两次决策之间持续监测和调整执行的机制。Code as Runtime 提出一个异步控制层：主 Agent 编写 Action Chunk 和事件处理器，机器人同时消费 Action Queue。本文界定 Agent–运行时接口和持续执行模型，不报告系统实现或真机评测结果。</p>
       </header>
 
+      <p class="article-references-link">这项提案组合了策略代码<sup class="cite"><a href="references.html#ref-1">[1]</a></sup>、可执行 Agent 轨迹<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>、Action Chunk<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>和异步执行 Action Chunk<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>。没有一项来源评估这一组合或其中跨轮运行的事件处理器。<a href="references.html">查看全部参考文献 →</a></p>
       <architecture-detail data-variant="nervous"></architecture-detail>
-      <p class="article-references-link">相关构件：Action Chunk 与 temporal ensembling<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>、实时异步 chunk 执行<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>、具身 coding agent 与 CaP-RL<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>。<a href="references.html">查看完整参考文献 →</a></p>
     </main>
     <script src="architecture-detail.js?v=code-as-runtime-copy"></script>
   </body>

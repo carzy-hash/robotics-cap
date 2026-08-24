@@ -3,6 +3,9 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+python3 "$REPO_ROOT/scripts/normalize-code-as-runtime-zh.py" --check
+python3 "$REPO_ROOT/scripts/restructure-code-as-runtime.py" --check
+
 if command -v node >/dev/null 2>&1; then
     node --check "$REPO_ROOT/materials/code-as-runtime/article/architecture-detail.js"
     node --check "$REPO_ROOT/materials/code-as-runtime/article/zh/architecture-detail.js"
@@ -34,11 +37,13 @@ required_public = [
     public / "training.html",
     public / "data.html",
     public / "references.html",
+    public / "cold-start.html",
     public / "zh" / "index.html",
     public / "zh" / "context.html",
     public / "zh" / "training.html",
     public / "zh" / "data.html",
     public / "zh" / "references.html",
+    public / "zh" / "cold-start.html",
     public / "styles.css",
     public / "architecture-detail.js",
     public / "zh" / "architecture-detail.js",
@@ -54,6 +59,7 @@ language_pairs = {
     public / "training.html": (public / "zh" / "training.html", "zh/training.html", "../training.html"),
     public / "data.html": (public / "zh" / "data.html", "zh/data.html", "../data.html"),
     public / "references.html": (public / "zh" / "references.html", "zh/references.html", "../references.html"),
+    public / "cold-start.html": (public / "zh" / "cold-start.html", "zh/cold-start.html", "../cold-start.html"),
 }
 for english, (chinese, chinese_href, english_href) in language_pairs.items():
     if not english.exists() or not chinese.exists():
@@ -91,9 +97,9 @@ for component in runtime_components:
     if not component.exists():
         continue
     component_text = component.read_text(encoding="utf-8")
-    if component_text.count("${this.stage({") != 7:
+    if component_text.count("${this.stage({") != 6:
         errors.append(
-            f"Runtime component must contain seven stages: {component.relative_to(root)}"
+            f"Runtime component must contain six distinct state-transition stages: {component.relative_to(root)}"
         )
     for required_class in ("architecture-block", "context-block", "episode-block"):
         if required_class not in component_text:
