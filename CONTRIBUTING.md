@@ -26,7 +26,17 @@
 
 候选稿和评审在文章发布后继续原位保留，以便复盘。
 
-## 3. 正式发布
+## 3. 发布评估
+
+根据改动范围运行 [`evaluators/`](evaluators/README.md) 中的评审：
+
+- `article-content.md` 检查定位、开场、术语、论证和系统边界。
+- `research-evidence.md` 检查主张、引用、实验状态和安全限制。
+- `publication-repository.md` 检查公开入口、中英文版本、CI 和 Pages artifact。
+
+把评审结果放入 `reviews/<article-id>/evaluations/`，并记录被评 commit。任一 evaluator 返回 `FAIL` 时，修正问题并重新评审。
+
+## 4. 正式发布
 
 只有通过评审并在 `decision.md` 中选定的版本才能成为公开入口。当前唯一发布目标是 `materials/code-as-runtime/article/`；其他文章默认只保留在源码中。发布时：
 

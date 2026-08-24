@@ -8,6 +8,8 @@
 
 完整流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。工作材料会进入 Git 历史，但不会被 GitHub Pages 部署；如果仓库本身是 public，这些材料仍然可从源码中看到。
 
+发布前评审使用 [`evaluators/`](evaluators/README.md)。文章内容、研究证据和仓库发布分别评估；任一 evaluator 返回 `FAIL` 时，不发布该版本。
+
 ## 当前公开内容
 
 - `materials/code-as-runtime/article/`：**Code as Runtime** 系列，包含 Runtime、Context、Runtime RL 与 Real-data SFT 四篇；GitHub Pages 根入口默认为英文版。
