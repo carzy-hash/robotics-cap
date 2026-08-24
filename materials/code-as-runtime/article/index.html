@@ -1,32 +1,38 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · Agent 编写机器人运行时</title>
-    <meta name="description" content="Code as Runtime：主 Agent 持续编写和修改动作构建代码与事件处理代码，让同一套机器人运行时跨越多轮决策。">
+    <title>Code as Runtime · Agent-Written Robot Runtime</title>
+    <meta name="description" content="Code as Runtime: the main Agent continuously writes and revises action-building code and event-handler code, maintaining one robot runtime across multiple decisions.">
+    <link rel="alternate" hreflang="en" href="./">
+    <link rel="alternate" hreflang="zh-CN" href="zh/">
+    <link rel="alternate" hreflang="x-default" href="./">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body class="nervous-page">
     <header class="candidate-nav">
-      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
-      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
-        <a class="active" href="./">01 Runtime</a>
-        <a href="context.html">02 Context</a>
-        <a href="training.html">03 Runtime RL</a>
-        <a href="data.html">04 Real-data SFT</a>
-      </nav>
+      <a class="mark" href="./" aria-label="Code as Runtime home"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <div class="nav-tools">
+        <nav class="series-nav" aria-label="Code as Runtime article series">
+          <a class="active" href="./">01 Runtime</a>
+          <a href="context.html">02 Context</a>
+          <a href="training.html">03 Runtime RL</a>
+          <a href="data.html">04 Real-data SFT</a>
+        </nav>
+        <a class="language-switch" href="zh/" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
+      </div>
     </header>
 
     <main class="candidate-shell">
       <header class="candidate-hero compact">
         <p class="eyebrow">Code as Runtime · Architecture note</p>
-        <h1>Agent 通过代码，<br>维护机器人运行时。</h1>
-        <p class="lead">Code as Runtime 把模型输出从一次性的 action 或 program，变成可持续执行、观察和改写的控制层。每轮决策中，主 Agent 可以运行代码构建 Action Chunk，也可以安装按频率或事件触发的 handler；两类代码跨越决策周期，共同维护机器人正在消费的 Action Queue。它继承 Code as Policies 的机器人策略代码<sup class="cite"><a href="references.html#ref-1">[1]</a></sup>与 CodeAct 的多轮可执行代码动作<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>，并把它们放入持续消费动作的异步 runtime。</p>
+        <h1>The Agent maintains<br>the robot runtime through code.</h1>
+        <p class="lead">Code as Runtime turns model output from a one-off action or program into a control layer that can keep executing, observing, and rewriting itself. On every decision, the main Agent can run code to construct an Action Chunk or install handlers triggered by frequency or events. Both kinds of code persist across decision cycles and jointly maintain the Action Queue the robot is consuming. The design inherits robot policy code from Code as Policies<sup class="cite"><a href="references.html#ref-1">[1]</a></sup> and multi-turn executable code actions from CodeAct<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>, then places them inside an asynchronous runtime that continuously consumes actions.</p>
       </header>
 
       <architecture-detail data-variant="nervous"></architecture-detail>
-      <p class="article-references-link">相关构件：Action Chunk 与 temporal ensembling<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>、实时异步 chunk 执行<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>、具身 coding agent 与 CaP-RL<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>。<a href="references.html">查看完整参考文献 →</a></p>
+      <p class="article-references-link">Related building blocks: Action Chunks and temporal ensembling<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>, real-time asynchronous chunk execution<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>, and embodied coding agents with CaP-RL<sup class="cite"><a href="references.html#ref-8">[8]</a></sup>. <a href="references.html">View all references →</a></p>
     </main>
     <script src="architecture-detail.js?v=code-as-runtime-copy"></script>
   </body>

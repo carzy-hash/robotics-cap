@@ -10,7 +10,8 @@
 
 ## 当前公开内容
 
-- `materials/code-as-runtime/article/`：**Code as Runtime** 系列，包含 Runtime、Context 与 RL + Teachers 三篇；Architecture Note 是 GitHub Pages 根入口。
+- `materials/code-as-runtime/article/`：**Code as Runtime** 系列，包含 Runtime、Context、Runtime RL 与 Real-data SFT 四篇；GitHub Pages 根入口默认为英文版。
+- `materials/code-as-runtime/article/zh/`：四篇文章与 References 的完整中文版。每个公开页面都可跳转到对应语言版本。
 - `materials/code-as-runtime/`：该方案的原始材料、写作笔记与评审记录。
 - `site/ideas/`、`candidates/`、`work/` 与 `reviews/`：历史文章与形成过程，保留在源码中但不部署。
 
@@ -42,7 +43,7 @@ http://127.0.0.1:4000/robotics-cap/
 ./scripts/preview.sh stop
 ```
 
-本地根路径与线上一致，直接显示 Code as Runtime。`_workspace/` 是本地 review 索引，可查看 `work/`、`candidates/`、`reviews/`、`previews/` 和 `materials/`；它不会被部署。
+本地根路径与线上一致，直接显示英文版 Code as Runtime；中文版位于 `/robotics-cap/zh/`。`_workspace/` 是本地 review 索引，可查看 `work/`、`candidates/`、`reviews/`、`previews/` 和 `materials/`；它不会被部署。
 
 ## 发布
 

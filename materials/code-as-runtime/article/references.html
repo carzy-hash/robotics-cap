@@ -1,31 +1,37 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Code as Runtime · References</title>
-    <meta name="description" content="Code as Runtime 系列文章引用的机器人学习、代码智能体、Action Chunk、推理服务与数据工作。">
+    <meta name="description" content="Research on robot learning, code agents, Action Chunks, inference services, and data cited by the Code as Runtime series.">
+    <link rel="alternate" hreflang="en" href="references.html">
+    <link rel="alternate" hreflang="zh-CN" href="zh/references.html">
+    <link rel="alternate" hreflang="x-default" href="references.html">
     <link rel="stylesheet" href="styles.css?v=references">
   </head>
   <body class="references-page">
     <header class="candidate-nav">
-      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
-      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
-        <a href="./">01 Runtime</a>
-        <a href="context.html">02 Context</a>
-        <a href="training.html">03 Runtime RL</a>
-        <a href="data.html">04 Real-data SFT</a>
-      </nav>
+      <a class="mark" href="./" aria-label="Code as Runtime home"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <div class="nav-tools">
+        <nav class="series-nav" aria-label="Code as Runtime article series">
+          <a href="./">01 Runtime</a>
+          <a href="context.html">02 Context</a>
+          <a href="training.html">03 Runtime RL</a>
+          <a href="data.html">04 Real-data SFT</a>
+        </nav>
+        <a class="language-switch" href="zh/references.html" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
+      </div>
     </header>
 
     <main class="candidate-shell references-shell">
       <header class="candidate-hero compact">
         <p class="eyebrow">Code as Runtime · References</p>
-        <h1>已有构件，<br>与本文提出的组合。</h1>
-        <p class="lead">这些工作分别建立了机器人策略代码、交错式 Agent trace、可执行代码动作、Action Chunk、异步执行、前缀缓存、具身代码 Agent RL 和真实机器人数据等基础。Code as Runtime 对它们的组合与扩展仍是一项待实验验证的设计提案。</p>
+        <h1>Existing building blocks,<br>and the composition proposed here.</h1>
+        <p class="lead">These works establish foundations in robot policy code, interleaved Agent traces, executable code actions, Action Chunks, asynchronous execution, prefix caching, embodied code-agent RL, and real-robot data. Their composition and extension in Code as Runtime remains a design proposal that must be validated experimentally.</p>
       </header>
 
-      <section class="references-list" aria-label="参考文献列表">
+      <section class="references-list" aria-label="Reference list">
         <article id="ref-1"><span>[1]</span><p><b>Liang, J. et al.</b> “Code as Policies: Language Model Programs for Embodied Control.” 2022. <a href="https://arxiv.org/abs/2209.07753">arXiv:2209.07753</a></p></article>
         <article id="ref-2"><span>[2]</span><p><b>Yao, S. et al.</b> “ReAct: Synergizing Reasoning and Acting in Language Models.” ICLR 2023. <a href="https://arxiv.org/abs/2210.03629">arXiv:2210.03629</a></p></article>
         <article id="ref-3"><span>[3]</span><p><b>Wang, X. et al.</b> “Executable Code Actions Elicit Better LLM Agents.” ICML 2024. <a href="https://arxiv.org/abs/2402.01030">arXiv:2402.01030</a></p></article>
@@ -41,7 +47,7 @@
         <article id="ref-13"><span>[13]</span><p><b>Brohan, A. et al.</b> “RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control.” 2023. <a href="https://arxiv.org/abs/2307.15818">arXiv:2307.15818</a></p></article>
       </section>
 
-      <aside class="reference-scope"><b>引用边界</b><p>上述论文支持各自被引用的构件或经验事实；它们不证明 Code as Runtime 的完整架构、数据投影方法或训练方案已经优于现有系统。</p></aside>
+      <aside class="reference-scope"><b>Scope of citation</b><p>The papers above support the specific components or empirical facts for which they are cited. They do not demonstrate that the complete Code as Runtime architecture, data-projection method, or training recipe already outperforms existing systems.</p></aside>
     </main>
   </body>
 </html>

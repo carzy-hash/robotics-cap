@@ -1,81 +1,87 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Code as Runtime · Real-data Trace SFT</title>
-    <meta name="description" content="把连续、多频率的真机采集数据投影成因果有效、可重放、可直接用于 Code as Runtime SFT 的异步训练 trace。">
+    <meta name="description" content="Project continuous, multi-rate real-robot recordings into causal, replayable asynchronous traces ready for Code as Runtime SFT.">
+    <link rel="alternate" hreflang="en" href="data.html">
+    <link rel="alternate" hreflang="zh-CN" href="zh/data.html">
+    <link rel="alternate" hreflang="x-default" href="data.html">
     <link rel="stylesheet" href="styles.css?v=data-note">
   </head>
   <body class="data-page">
     <header class="candidate-nav">
-      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
-      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
-        <a href="./">01 Runtime</a>
-        <a href="context.html">02 Context</a>
-        <a href="training.html">03 Runtime RL</a>
-        <a class="active" href="data.html">04 Real-data SFT</a>
-      </nav>
+      <a class="mark" href="./" aria-label="Code as Runtime home"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <div class="nav-tools">
+        <nav class="series-nav" aria-label="Code as Runtime article series">
+          <a href="./">01 Runtime</a>
+          <a href="context.html">02 Context</a>
+          <a href="training.html">03 Runtime RL</a>
+          <a class="active" href="data.html">04 Real-data SFT</a>
+        </nav>
+        <a class="language-switch" href="zh/data.html" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
+      </div>
     </header>
 
     <main class="candidate-shell data-shell">
       <header class="candidate-hero compact data-hero">
         <p class="eyebrow">Code as Runtime · Real-data Trace SFT · 04</p>
-        <h1>把真机采集，<br>变成可学习的 Runtime Trace。</h1>
-        <p class="lead">这篇文章讨论 Code as Runtime 的真实数据 SFT：如何把一次连续示教留下的多相机视频、关节、力、触觉和动作，转成一组主 Agent 可以自回归学习的 context → decision 样本。DROID<sup class="cite"><a href="references.html#ref-10">[10]</a></sup>与 Open X-Embodiment<sup class="cite"><a href="references.html#ref-11">[11]</a></sup>代表了大规模真实机器人轨迹与标准化数据基础；本文关注其上的下一层——重建每个 turn 的因果上下文、Action Queue 与可执行 target decision。</p>
+        <h1>Turn real-robot recordings<br>into learnable Runtime Traces.</h1>
+        <p class="lead">This article covers real-data SFT for Code as Runtime: how to turn the multi-camera video, joints, force, tactile signals, and actions left by one continuous demonstration into context → decision examples that the main Agent can learn autoregressively. DROID<sup class="cite"><a href="references.html#ref-10">[10]</a></sup> and Open X-Embodiment<sup class="cite"><a href="references.html#ref-11">[11]</a></sup> represent foundations for large-scale real-robot trajectories and standardized data. This article focuses on the next layer: reconstructing each turn's causal context, Action Queue, and executable target decision.</p>
       </header>
 
       <article class="data-article">
         <section class="data-section" aria-labelledby="projection-objective-heading">
           <header class="section-intro">
             <p class="eyebrow">01 · SFT projection objective</p>
-            <h2 id="projection-objective-heading">先保存发生过什么，<br>再构造可以监督的下一 turn。</h2>
-            <p>原始数据是不可变的事实层；SFT 样本是其中一种带假设的因果投影。投影器要显式选择 Agent 的唤醒时刻、推理延迟、可见 observation、queue 状态与 target decision，最终形成部署同构的 context → Agent output，而不能把未来信息悄悄写回输入。</p>
+            <h2 id="projection-objective-heading">First preserve what happened.<br>Then construct the next supervised turn.</h2>
+            <p>Raw data is an immutable fact layer; an SFT example is one assumption-bearing causal projection of it. The projector must explicitly choose the Agent wake time, inference latency, visible observations, queue state, and target decision, ultimately producing a deployment-isomorphic context → Agent output without silently writing future information back into the input.</p>
           </header>
 
-          <figure class="projection-pipeline" aria-label="从连续采集数据到 Code as Runtime 训练视图的投影管线">
-            <div class="pipeline-node source"><small>SOURCE OF TRUTH</small><b>Raw episode</b><span>多频率 sensor · command · robot state · intervention</span></div>
+          <figure class="projection-pipeline" aria-label="Projection pipeline from continuous recordings to Code as Runtime training views">
+            <div class="pipeline-node source"><small>SOURCE OF TRUTH</small><b>Raw episode</b><span>Multi-rate sensors · commands · robot state · interventions</span></div>
             <i>→</i>
-            <div class="pipeline-node ledger"><small>NORMALIZE</small><b>Event ledger</b><span>统一时钟 · 坐标系 · media refs · provenance</span></div>
+            <div class="pipeline-node ledger"><small>NORMALIZE</small><b>Event ledger</b><span>Unified clock · frames · media refs · provenance</span></div>
             <i>→</i>
-            <div class="pipeline-node replay"><small>PROJECT</small><b>Pseudo-time replay</b><span>唤醒、延迟、queue 消费、截断与事件</span></div>
+            <div class="pipeline-node replay"><small>PROJECT</small><b>Pseudo-time replay</b><span>Wake, latency, queue consumption, truncation, events</span></div>
             <i>→</i>
             <div class="pipeline-node trace"><small>SFT OUTPUT</small><b>Runtime training turns</b><span>causal context → decision · code · queue mutation</span></div>
             <div class="pipeline-views"><span>primary: SFT next-turn</span><span>plus: preference</span><span>plus: verifier</span><span>plus: RL reset</span></div>
           </figure>
 
-          <aside class="data-principle"><b>投影不是改写事实。</b><p>同一个 raw episode 可以产生多种 decision timing 或 code 表达，但每个合成字段都要保留来源、方法和置信度；任何来自 future frame、人工修正或仿真真值的信息，都只能存在于 teacher sidecar，不能伪装成策略输入。</p></aside>
+          <aside class="data-principle"><b>Projection does not rewrite facts.</b><p>The same raw episode can yield multiple decision timings or code expressions, but every synthesized field must retain its source, method, and confidence. Anything from a future frame, human correction, or simulation ground truth belongs only in the teacher sidecar and must never masquerade as policy input.</p></aside>
         </section>
 
         <section class="data-section" aria-labelledby="ledger-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">02 · Canonical event ledger</p>
-            <h2 id="ledger-heading">先把不同频率的流，<br>对齐到一条事件账本。</h2>
-            <p>视频帧、控制命令、机器人实际运动与接触反馈并不同时到达。Open X-Embodiment 展示了跨 embodiment 统一数据格式的重要性<sup class="cite"><a href="references.html#ref-11">[11]</a></sup>；这里还要求保留各流的 source timestamp，再建立经过校准的 episode clock，否则一个看似合理的 turn 可能已经使用了尚未到达的图像。</p>
+            <h2 id="ledger-heading">First align streams at different rates<br>onto one event ledger.</h2>
+            <p>Video frames, control commands, actual robot motion, and contact feedback do not arrive simultaneously. Open X-Embodiment demonstrates the importance of a unified format across embodiments<sup class="cite"><a href="references.html#ref-11">[11]</a></sup>. Here, each stream must also preserve its source timestamp before establishing a calibrated episode clock; otherwise, a seemingly plausible turn may already use an image that had not yet arrived.</p>
           </header>
 
           <div class="event-ledger">
-            <div class="event-row heading"><span>流</span><span>原始记录</span><span>账本中的关键字段</span><span>投影用途</span></div>
-            <div class="event-row"><b>Vision</b><span>多相机 RGB / depth</span><span>capture_ts · arrival_ts · camera · calibration · media_ref</span><span>选择 latest 与历史 keyframes</span></div>
-            <div class="event-row"><b>Robot state</b><span>joint / EEF / gripper</span><span>sample_ts · frame · units · validity</span><span>progress、执行前缀与重放误差</span></div>
-            <div class="event-row"><b>Force + tactile</b><span>接触、力矩、滑动</span><span>sample_ts · filtered/raw · threshold version</span><span>接触分段与 handler 触发证据</span></div>
-            <div class="event-row"><b>Commands</b><span>发送与取消的动作</span><span>command_ts · ack_ts · payload · queue operation</span><span>重建 Action Queue 的真实变化</span></div>
-            <div class="event-row"><b>Human</b><span>介入、接管、标注</span><span>start/end · scope · reason · author</span><span>切分归因，避免把人类动作算给 Agent</span></div>
+            <div class="event-row heading"><span>Stream</span><span>Raw record</span><span>Key ledger fields</span><span>Projection use</span></div>
+            <div class="event-row"><b>Vision</b><span>Multi-camera RGB / depth</span><span>capture_ts · arrival_ts · camera · calibration · media_ref</span><span>Select latest and historical keyframes</span></div>
+            <div class="event-row"><b>Robot state</b><span>joint / EEF / gripper</span><span>sample_ts · frame · units · validity</span><span>Progress, executed prefix, replay error</span></div>
+            <div class="event-row"><b>Force + tactile</b><span>Contact, torque, slip</span><span>sample_ts · filtered/raw · threshold version</span><span>Contact segmentation and handler-trigger evidence</span></div>
+            <div class="event-row"><b>Commands</b><span>Sent and canceled actions</span><span>command_ts · ack_ts · payload · queue operation</span><span>Reconstruct real Action Queue changes</span></div>
+            <div class="event-row"><b>Human</b><span>Intervention, takeover, annotation</span><span>start/end · scope · reason · author</span><span>Segment attribution so human actions are not credited to the Agent</span></div>
           </div>
 
           <div class="storage-contract">
-            <div><small>TRACE.JSON</small><b>只保存结构与引用</b><p>turn、时间边界、queue mutation、代码、执行结果和标签。</p></div>
-            <div><small>MEDIA/</small><b>像素外存</b><p>图像与视频不以内联 base64 塞进 JSON；按 content hash 或稳定路径引用。</p></div>
-            <div><small>CHUNKS/</small><b>稠密数组外存</b><p>Action Chunk、joint trajectory 与高频 sensor window 使用二进制数组。</p></div>
-            <div><small>SIDECAR/</small><b>权限隔离</b><p>GT、人工修正、projection residual 与 privileged verifier 单独保存。</p></div>
+            <div><small>TRACE.JSON</small><b>Store only structure and references</b><p>Turns, time boundaries, queue mutations, code, execution results, and labels.</p></div>
+            <div><small>MEDIA/</small><b>Store pixels externally</b><p>Do not place inline base64 images and video in JSON; reference them by content hash or stable path.</p></div>
+            <div><small>CHUNKS/</small><b>Store dense arrays externally</b><p>Use binary arrays for Action Chunks, joint trajectories, and high-rate sensor windows.</p></div>
+            <div><small>SIDECAR/</small><b>Separate privileges</b><p>Store ground truth, human corrections, projection residuals, and privileged verifiers separately.</p></div>
           </div>
         </section>
 
         <section class="data-section" aria-labelledby="pseudo-time-heading">
           <header class="section-intro">
             <p class="eyebrow">03 · Pseudo-time replay</p>
-            <h2 id="pseudo-time-heading">推理期间，<br>机器人并没有停下来。</h2>
-            <p>同步切片会产生一种不存在的世界：Agent 看完一段动作的最终结果，再决定这段动作该怎么写。RTC 明确刻画了“模型推理时旧 chunk 仍在执行”以及冻结已执行前缀的异步约束<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>；VLA-Corrector 则研究了检测偏离后缩短执行 horizon 的路径<sup class="cite"><a href="references.html#ref-12">[12]</a></sup>。本篇据此沿示教轨迹做伪时间回放。</p>
+            <h2 id="pseudo-time-heading">The robot does not stop<br>while the model is inferring.</h2>
+            <p>Synchronous slicing creates a world that never existed: the Agent sees the final result of an action segment before deciding how that segment should be written. RTC explicitly models that an old chunk keeps executing during model inference and that the executed prefix is frozen under asynchronous constraints<sup class="cite"><a href="references.html#ref-6">[6]</a></sup>. VLA-Corrector studies shortening the execution horizon after detecting deviation<sup class="cite"><a href="references.html#ref-12">[12]</a></sup>. Accordingly, this article performs pseudo-time replay along the demonstration trajectory.</p>
           </header>
 
           <figure class="pseudo-time-figure">
@@ -83,66 +89,66 @@
             <div class="time-lane observation-lane"><b>OBSERVATION</b><span class="pulse p0">frame</span><span class="pulse p1">frame</span><span class="pulse p2">near</span><span class="pulse p3">contact</span></div>
             <div class="time-lane agent-lane"><b>AGENT</b><span class="turn t0">wake</span><i class="latency l0">thinking d</i><span class="turn t1">wake</span><i class="latency l1">thinking d</i><span class="turn t2">wake</span></div>
             <div class="time-lane queue-lane"><b>ACTION QUEUE</b><span class="queue-segment approach">approach · consumed continuously</span><span class="queue-segment grasp">replace tail → grasp</span></div>
-            <div class="causal-cut"><span></span><b>available_until</b><p>当前 turn 的所有 context refs 必须早于这条边界；边界之后的帧只能进入下一轮。</p></div>
-            <figcaption>唤醒时刻与 decision 生效时刻不同。投影器同时保存 observation cutoff、decision commit time 和 queue 已消费前缀，才能还原真实的控制语义。</figcaption>
+            <div class="causal-cut"><span></span><b>available_until</b><p>Every context reference in this turn must precede this boundary; frames after it can enter only the next turn.</p></div>
+            <figcaption>The wake time differs from the time a decision takes effect. To recover real control semantics, the projector stores the observation cutoff, decision commit time, and consumed queue prefix together.</figcaption>
           </figure>
 
           <div class="timing-rules">
-            <article><span>01</span><b>选择唤醒点</b><p>固定 stride、阶段事件和异常事件混合；不要只在“正确答案显然”时唤醒。</p></article>
-            <article><span>02</span><b>采样推理延迟</b><p>从目标模型延迟分布采样 <code>d</code>，而不是假设 decision 瞬时产生。</p></article>
-            <article><span>03</span><b>冻结执行前缀</b><p>推理期间已发送或已执行的动作不可撤回，只有剩余 queue tail 可被替换。</p></article>
-            <article><span>04</span><b>随机化截断节奏</b><p>在偏离前、偏离点与偏离后混合截断，避免策略只学会单一时间模式。</p></article>
+            <article><span>01</span><b>Select wake points</b><p>Mix a fixed stride, stage events, and anomaly events. Do not wake only when the correct answer is obvious.</p></article>
+            <article><span>02</span><b>Sample inference latency</b><p>Sample <code>d</code> from the target model's latency distribution instead of assuming an instantaneous decision.</p></article>
+            <article><span>03</span><b>Freeze the executed prefix</b><p>Actions sent or executed during inference cannot be recalled; only the remaining queue tail can be replaced.</p></article>
+            <article><span>04</span><b>Randomize truncation timing</b><p>Mix truncations before, at, and after deviations so the policy does not learn only one timing pattern.</p></article>
           </div>
         </section>
 
         <section class="data-section" aria-labelledby="action-code-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">04 · From motion to runtime decisions</p>
-            <h2 id="action-code-heading">不是每段轨迹都值得<br>被解释成代码。</h2>
-            <p>Demo2Code 已探索从示教摘要到可执行机器人代码的两阶段合成<sup class="cite"><a href="references.html#ref-9">[9]</a></sup>。这里先把稠密动作按接触、曲率、速度与任务阶段分段，再尝试用受限 primitive 重建；低曲率、非接触段通常适合压缩成 code，接触丰富或拟合失败的段则保留为 ACT 类 Action Chunk<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>。能转才转，宁可保留真实 chunk，也不要制造漂亮但错误的 code。</p>
+            <h2 id="action-code-heading">Not every trajectory segment deserves<br>to be explained as code.</h2>
+            <p>Demo2Code explores two-stage synthesis from demonstration summaries to executable robot code<sup class="cite"><a href="references.html#ref-9">[9]</a></sup>. Here, dense actions are first segmented by contact, curvature, speed, and task stage, then reconstructed with restricted primitives. Low-curvature, non-contact segments are often suitable for compression into code; contact-rich or poorly fitted segments remain ACT-like Action Chunks<sup class="cite"><a href="references.html#ref-4">[4]</a></sup>. Convert only when conversion works: retain a real chunk rather than manufacture elegant but incorrect code.</p>
           </header>
 
           <div class="decision-projector">
-            <article class="motion-segment"><small>EXPERT SEGMENT</small><b>dense action τ[a:b]</b><p>动作、状态、力与接触窗口</p></article>
+            <article class="motion-segment"><small>EXPERT SEGMENT</small><b>dense action τ[a:b]</b><p>Action, state, force, and contact windows</p></article>
             <i>→</i>
-            <article><small>FIT + REPLAY</small><b>primitive candidate</b><p>优先结构化 <code>ops[]</code>；计算 replay RMSE 与约束违例</p></article>
+            <article><small>FIT + REPLAY</small><b>primitive candidate</b><p>Prefer structured <code>ops[]</code>; compute replay RMSE and constraint violations</p></article>
             <i>→</i>
             <article class="decision-branch"><div><small>RMSE &lt; ε</small><b>EMIT code-built chunk</b></div><div><small>FIT FAILS / CONTACT</small><b>EMIT direct chunk</b></div></article>
           </div>
 
           <div class="decision-contract-grid">
-            <div><small>CONTINUE</small><b>已有 queue 仍然合适</b><p>投影时没有必要伪造新动作。保留一次明确审查，并验证剩余 horizon 足够。</p></div>
-            <div><small>EMIT</small><b>写入新的动作</b><p>根据已执行前缀选择 append、replace tail，或 truncate 后写入 code / chunk。</p></div>
-            <div><small>RUN_ANALYSIS</small><b>补充可部署观察</b><p>把分割、追踪、多视角融合等实际可调用 helper 写进 trace，并保存 tool result。</p></div>
-            <div><small>UPDATE_HANDLER</small><b>安装事件响应代码</b><p>只有高频传感器确实支持触发条件时，才从异常或接触窗口合成 handler 示例。</p></div>
+            <div><small>CONTINUE</small><b>The existing queue remains appropriate</b><p>Do not fabricate a new action during projection. Preserve an explicit review and verify that the remaining horizon is sufficient.</p></div>
+            <div><small>EMIT</small><b>Write a new action</b><p>Based on the executed prefix, choose append, replace tail, or truncate before writing code / a chunk.</p></div>
+            <div><small>RUN_ANALYSIS</small><b>Add deployable observations</b><p>Write genuinely callable helpers such as segmentation, tracking, and multi-view fusion into the trace and save the tool result.</p></div>
+            <div><small>UPDATE_HANDLER</small><b>Install event-response code</b><p>Synthesize a handler example from an anomaly or contact window only when high-rate sensors truly support its trigger.</p></div>
           </div>
         </section>
 
         <section class="data-section" aria-labelledby="banana-projection-heading">
           <header class="section-intro">
             <p class="eyebrow">05 · Worked projection</p>
-            <h2 id="banana-projection-heading">一条拿香蕉示教，<br>怎样变成六个训练 turn？</h2>
-            <p>原始 episode 只有连续运动与 sensor 流。投影器结合阶段边界、replay 拟合、queue 余量和因果可见性，构造部署时可能真实发生的 decision trace。下表同时标出哪些内容来自采集，哪些内容是可审计的合成。</p>
+            <h2 id="banana-projection-heading">How does one banana demonstration<br>become six training turns?</h2>
+            <p>The raw episode contains only continuous motion and sensor streams. The projector combines stage boundaries, replay fitting, queue capacity, and causal visibility to construct a decision trace that could actually occur during deployment. The table also marks what comes from recording and what is auditable synthesis.</p>
           </header>
 
           <div class="banana-trace-table">
-            <div class="banana-row heading"><span>turn</span><span>当时可见</span><span>投影出的 Agent 输出</span><span>执行与自检</span><span>来源</span></div>
-            <div class="banana-row"><b>00 · Locate</b><span>初始多相机帧、空 queue</span><span><code>RUN_ANALYSIS</code>：SAM 3 + 多相机融合；<code>EMIT</code> approach code</span><span>展开数秒 Action Chunk，记录目标与重放误差</span><em>视觉调用合成；动作由非接触轨迹拟合</em></div>
-            <div class="banana-row"><b>01 · Review</b><span>一秒后帧、queue remaining 足够</span><span><code>CONTINUE</code></span><span>不生成 chunk，不修改 queue；轨迹仍朝 pre-grasp 收敛</span><em>decision 合成；状态来自采集</em></div>
-            <div class="banana-row"><b>02 · Near</b><span>进入抓取范围，approach 尾部尚未执行</span><span><code>EMIT</code> grasp chunk；replace tail</span><span>冻结 executed prefix，只替换未执行尾部</span><em>接触段保留 direct chunk</em></div>
-            <div class="banana-row"><b>03 · Holding</b><span>夹爪闭合、力与触觉出现稳定接触</span><span><code>UPDATE_HANDLER</code>：TAP drop guard</span><span>高频检查相对运动；本次 rollout 未触发异常</span><em>触发条件由 sensor window 证明</em></div>
-            <div class="banana-row"><b>04 · Transport</b><span>持物状态、碗的视觉位置</span><span><code>EMIT</code> move-to-bowl code；中间可 <code>CONTINUE</code></span><span>检查香蕉仍随夹爪稳定移动</span><em>非接触 transport 轨迹拟合</em></div>
-            <div class="banana-row"><b>05 · Release</b><span>碗区域、低速与安全高度条件成立</span><span><code>EMIT</code> release chunk；移除 drop guard</span><span>after-frame 与夹爪状态验证放置成功</span><em>动作、结果来自采集；decision 合成</em></div>
+            <div class="banana-row heading"><span>turn</span><span>visible then</span><span>projected Agent output</span><span>execution and self-check</span><span>source</span></div>
+            <div class="banana-row"><b>00 · Locate</b><span>Initial multi-camera frames, empty queue</span><span><code>RUN_ANALYSIS</code>: SAM 3 + multi-view fusion; <code>EMIT</code> approach code</span><span>Expand a multi-second Action Chunk; record target and replay error</span><em>Visual calls synthesized; actions fitted from non-contact motion</em></div>
+            <div class="banana-row"><b>01 · Review</b><span>Frame one second later; enough queue remaining</span><span><code>CONTINUE</code></span><span>No chunk and no queue mutation; trajectory still converges toward pre-grasp</span><em>Decision synthesized; state recorded</em></div>
+            <div class="banana-row"><b>02 · Near</b><span>Inside grasp range; approach tail unexecuted</span><span><code>EMIT</code> grasp chunk; replace tail</span><span>Freeze executed prefix; replace only the unexecuted tail</span><em>Direct chunk retained for contact segment</em></div>
+            <div class="banana-row"><b>03 · Holding</b><span>Gripper closed; force and tactile show stable contact</span><span><code>UPDATE_HANDLER</code>: TAP drop guard</span><span>Check relative motion at high rate; no anomaly triggered in this rollout</span><em>Sensor window supports the trigger</em></div>
+            <div class="banana-row"><b>04 · Transport</b><span>Held-object state and visual bowl location</span><span><code>EMIT</code> move-to-bowl code; optionally <code>CONTINUE</code> midway</span><span>Verify the banana keeps moving stably with the gripper</span><em>Transport fitted from non-contact trajectory</em></div>
+            <div class="banana-row"><b>05 · Release</b><span>Bowl region, low speed, safe height</span><span><code>EMIT</code> release chunk; remove drop guard</span><span>After-frame and gripper state verify successful placement</span><em>Actions and result recorded; decision synthesized</em></div>
           </div>
 
-          <aside class="data-principle cyan"><b>“合理的解释”还不够，必须可以重放。</b><p>每个 code-built chunk 都重新展开并与实际轨迹比较；每次 queue mutation 都检查 executed prefix 是否保持不变；每个 CONTINUE 都验证 queue 没有在下一轮前耗尽。无法通过这些检查的 turn 不进入高置信 SFT 集。</p></aside>
+          <aside class="data-principle cyan"><b>A plausible explanation is not enough; it must replay.</b><p>Re-expand every code-built chunk and compare it with the actual trajectory. Check that every queue mutation preserves the executed prefix. Verify that every CONTINUE leaves enough queue to reach the next turn. Turns that fail these checks do not enter the high-confidence SFT set.</p></aside>
         </section>
 
         <section class="data-section" aria-labelledby="schema-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">06 · From canonical trace to SFT pairs</p>
-            <h2 id="schema-heading">一条 episode trace，<br>展开成多轮 SFT 样本。</h2>
-            <p>每个 turn 都以 <code>available_until</code> 之前的 context 为输入，以 Agent 的 decision、program 与 queue mutation 为主要监督目标；tool result 和 executor event 进入下一轮上下文。数据不保存不可见的“完整内心思维”，只监督可观察、可执行、可验证的结构化决策。</p>
+            <h2 id="schema-heading">One episode trace unfolds<br>into multi-turn SFT examples.</h2>
+            <p>Each turn uses context before <code>available_until</code> as input and the Agent's decision, program, and queue mutation as primary supervision. Tool results and executor events enter the next context. The data does not preserve an invisible “complete inner monologue”; it supervises observable, executable, and verifiable structured decisions.</p>
           </header>
 
           <div class="schema-layout">
@@ -169,43 +175,43 @@
   }]
 }</code></pre>
             <div class="schema-notes">
-              <div><small>CAUSAL BOUNDARY</small><b><code>available_until</code></b><p>所有策略输入必须能证明在该时刻之前已经到达。</p></div>
-              <div><small>QUEUE CONSISTENCY</small><b><code>queue_before / after</code></b><p>使 append、truncate 与 replace tail 可以离线重放。</p></div>
-              <div><small>OBSERVABLE REASONING</small><b><code>decision / program / events</code></b><p>监督外显决策与执行结果，而不是假定存在唯一隐藏 CoT。</p></div>
-              <div><small>PROVENANCE</small><b><code>recorded / derived / projected</code></b><p>每个字段标明来自原始记录、确定性计算还是 teacher 合成。</p></div>
+              <div><small>CAUSAL BOUNDARY</small><b><code>available_until</code></b><p>Every policy input must be provably available before this time.</p></div>
+              <div><small>QUEUE CONSISTENCY</small><b><code>queue_before / after</code></b><p>Makes append, truncate, and replace-tail operations replayable offline.</p></div>
+              <div><small>OBSERVABLE REASONING</small><b><code>decision / program / events</code></b><p>Supervises explicit decisions and execution results instead of assuming one hidden chain of thought.</p></div>
+              <div><small>PROVENANCE</small><b><code>recorded / derived / projected</code></b><p>Marks every field as coming from raw records, deterministic computation, or teacher synthesis.</p></div>
             </div>
           </div>
 
           <div class="training-views">
-            <article><small>PRIMARY VIEW</small><b>SFT next decision</b><p>输入 causal context；监督 decision、program、tool call 与 queue mutation。</p></article>
-            <article><small>DERIVED VIEW</small><b>Preference</b><p>从被过滤的候选中比较错误 queue 修改与更经济的 CONTINUE。</p></article>
-            <article><small>DERIVED VIEW</small><b>Verifier</b><p>复用进度、约束、失败端点、恢复与最终结果标签。</p></article>
-            <article><small>HANDOFF TO 03</small><b>RL initial state</b><p>把 canonical runtime snapshot 交给第三篇的 on-policy rollout，而不是继续当离线 SFT。</p></article>
+            <article><small>PRIMARY VIEW</small><b>SFT next decision</b><p>Input causal context; supervise decision, program, tool call, and queue mutation.</p></article>
+            <article><small>DERIVED VIEW</small><b>Preference</b><p>Compare wrong queue edits with a more economical CONTINUE among filtered candidates.</p></article>
+            <article><small>DERIVED VIEW</small><b>Verifier</b><p>Reuse progress, constraint, failure-endpoint, recovery, and final-outcome labels.</p></article>
+            <article><small>HANDOFF TO 03</small><b>RL initial state</b><p>Pass the canonical runtime snapshot to the third article's on-policy rollout rather than treating it as more offline SFT.</p></article>
           </div>
         </section>
 
         <section class="data-section closing-section" aria-labelledby="audit-heading">
           <header class="section-intro">
             <p class="eyebrow">07 · Filtering and acceptance</p>
-            <h2 id="audit-heading">数据是否能训练，<br>先看它能否通过因果审计。</h2>
-            <p>成功 episode 不自动等于好数据。真正危险的是“成功但理由错误”的 trace：使用未来帧、泄漏真值、把人类接管归给 Agent，或用无法重放的 code 解释动作。过滤器必须在训练前找出这些捷径。</p>
+            <h2 id="audit-heading">Before data can train,<br>it must pass a causal audit.</h2>
+            <p>A successful episode is not automatically good data. The real danger is a trace that succeeds for the wrong reason: it uses future frames, leaks ground truth, attributes human takeover to the Agent, or explains actions with code that cannot replay. Filters must find these shortcuts before training.</p>
           </header>
 
           <div class="audit-grid">
-            <div><b>Temporal leakage</b><span>是否有任何 context ref 晚于 <code>available_until</code>？</span></div>
-            <div><b>Replay equivalence</b><span>code 展开后与采集轨迹的误差是否低于分段阈值？</span></div>
-            <div><b>Queue validity</b><span>是否修改了已经执行或正在飞行、不可撤回的前缀？</span></div>
-            <div><b>Privilege leakage</b><span>GT、人工修正与 after-frame 是否进入了策略输入？</span></div>
-            <div><b>Intervention attribution</b><span>人类接管前后是否切段，并标清控制权归属？</span></div>
-            <div><b>Failure value</b><span>失败是否包含可定位端点与后续恢复，而非只有 terminal fail？</span></div>
-            <div><b>Media integrity</b><span>所有外部图像、sensor window 与 chunk 引用是否存在且可解码？</span></div>
-            <div><b>Projection confidence</b><span>低置信合成字段是否被降权、送审或排除出 SFT？</span></div>
+            <div><b>Temporal leakage</b><span>Does any context reference occur after <code>available_until</code>?</span></div>
+            <div><b>Replay equivalence</b><span>Is the error between expanded code and the recorded trajectory below the segment threshold?</span></div>
+            <div><b>Queue validity</b><span>Did any mutation alter an executed or in-flight, irrevocable prefix?</span></div>
+            <div><b>Privilege leakage</b><span>Did ground truth, human corrections, or after-frames enter policy input?</span></div>
+            <div><b>Intervention attribution</b><span>Was the trace split around human takeover with control ownership marked?</span></div>
+            <div><b>Failure value</b><span>Does a failure include a localized endpoint and later recovery, rather than only terminal failure?</span></div>
+            <div><b>Media integrity</b><span>Do all external images, sensor windows, and chunk references exist and decode?</span></div>
+            <div><b>Projection confidence</b><span>Are low-confidence synthesized fields downweighted, reviewed, or excluded from SFT?</span></div>
           </div>
 
-          <p class="closing-copy">这条数据管线的直接产物，是与部署 runtime 同构的多轮 SFT 样本：输入只包含当时真正可见的 context，目标只包含下一次可执行的 Agent decision。随后 RL 可以复用同一 schema 继续 rollout，但 Real-data SFT 的首要成功标准仍是：训练样本里的世界，与采集当时真实存在的世界保持一致。</p>
+          <p class="closing-copy">The direct output of this data pipeline is multi-turn SFT that is isomorphic to the deployment runtime: input contains only context genuinely visible at that time, and the target contains only the next executable Agent decision. RL can later reuse the same schema for continued rollout, but the primary success criterion for Real-data SFT remains that the world in each training example matches the world that actually existed during collection.</p>
         </section>
       </article>
-      <p class="article-references-link">伪时间 trace projector、code replay 偏差门槛与 recorded / derived / projected provenance 是本文提出的数据配方。<a href="references.html">查看完整参考文献 →</a></p>
+      <p class="article-references-link">The pseudo-time trace projector, code-replay error threshold, and recorded / derived / projected provenance are data recipes proposed in this article. <a href="references.html">View all references →</a></p>
     </main>
   </body>
 </html>

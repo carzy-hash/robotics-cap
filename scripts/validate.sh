@@ -3,6 +3,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+if command -v node >/dev/null 2>&1; then
+    node --check "$REPO_ROOT/materials/code-as-runtime/article/architecture-detail.js"
+    node --check "$REPO_ROOT/materials/code-as-runtime/article/zh/architecture-detail.js"
+fi
+
 python3 - "$REPO_ROOT" <<'PY'
 import html.parser
 import json
@@ -29,13 +34,79 @@ required_public = [
     public / "training.html",
     public / "data.html",
     public / "references.html",
+    public / "zh" / "index.html",
+    public / "zh" / "context.html",
+    public / "zh" / "training.html",
+    public / "zh" / "data.html",
+    public / "zh" / "references.html",
     public / "styles.css",
     public / "architecture-detail.js",
+    public / "zh" / "architecture-detail.js",
     public / "assets" / "nervous-system-v1.png",
 ]
 for path in required_public:
     if not path.exists():
         errors.append(f"missing required public file: {path.relative_to(root)}")
+
+language_pairs = {
+    public / "index.html": (public / "zh" / "index.html", "zh/", "../"),
+    public / "context.html": (public / "zh" / "context.html", "zh/context.html", "../context.html"),
+    public / "training.html": (public / "zh" / "training.html", "zh/training.html", "../training.html"),
+    public / "data.html": (public / "zh" / "data.html", "zh/data.html", "../data.html"),
+    public / "references.html": (public / "zh" / "references.html", "zh/references.html", "../references.html"),
+}
+for english, (chinese, chinese_href, english_href) in language_pairs.items():
+    if not english.exists() or not chinese.exists():
+        continue
+    english_text = english.read_text(encoding="utf-8")
+    chinese_text = chinese.read_text(encoding="utf-8")
+    if '<html lang="en">' not in english_text:
+        errors.append(f"English page has wrong lang attribute: {english.relative_to(root)}")
+    if '<html lang="zh-CN">' not in chinese_text:
+        errors.append(f"Chinese page has wrong lang attribute: {chinese.relative_to(root)}")
+    if not re.search(rf'class="language-switch"[^>]+href="{re.escape(chinese_href)}"', english_text):
+        errors.append(f"English page has wrong Chinese counterpart link: {english.relative_to(root)}")
+    if not re.search(rf'class="language-switch"[^>]+href="{re.escape(english_href)}"', chinese_text):
+        errors.append(f"Chinese page has wrong English counterpart link: {chinese.relative_to(root)}")
+    english_without_switch = re.sub(
+        r'<a class="language-switch"[^>]*>中文</a>', "", english_text
+    )
+    if re.search(r"[\u3400-\u9fff]", english_without_switch):
+        errors.append(f"English page still contains Chinese copy: {english.relative_to(root)}")
+
+english_runtime_js = public / "architecture-detail.js"
+if english_runtime_js.exists() and re.search(
+    r"[\u3400-\u9fff]", english_runtime_js.read_text(encoding="utf-8")
+):
+    errors.append("English Runtime component still contains Chinese copy")
+
+runtime_components = [
+    public / "architecture-detail.js",
+    public / "zh" / "architecture-detail.js",
+]
+single_quoted_stage_value = re.compile(
+    r"^\s*(observation|thought|queue|check|next):\s*'(.*)'[,]?$"
+)
+for component in runtime_components:
+    if not component.exists():
+        continue
+    component_text = component.read_text(encoding="utf-8")
+    if component_text.count("${this.stage({") != 7:
+        errors.append(
+            f"Runtime component must contain seven stages: {component.relative_to(root)}"
+        )
+    for required_class in ("architecture-block", "context-block", "episode-block"):
+        if required_class not in component_text:
+            errors.append(
+                f"Runtime component is missing {required_class}: {component.relative_to(root)}"
+            )
+    for line_number, line in enumerate(component_text.splitlines(), 1):
+        match = single_quoted_stage_value.match(line)
+        if match and re.search(r"(?<!\\)'", match.group(2)):
+            errors.append(
+                f"unsafe apostrophe in single-quoted Runtime copy: "
+                f"{component.relative_to(root)}:{line_number}"
+            )
 
 for candidate_dir in sorted((root / "candidates").glob("*")):
     if not candidate_dir.is_dir():

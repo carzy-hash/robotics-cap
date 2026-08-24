@@ -1,90 +1,96 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Code as Runtime · 主 Agent 的上下文如何构建</title>
-    <meta name="description" content="为 Code as Runtime 构建缓存友好的多模态上下文：稳定前缀在前，粘性历史居中，最新图像放在最后。">
+    <title>Code as Runtime · Building the Main Agent's Context</title>
+    <meta name="description" content="Build a cache-friendly multimodal context for Code as Runtime: stable prefixes first, sticky history in the middle, and the latest image last.">
+    <link rel="alternate" hreflang="en" href="context.html">
+    <link rel="alternate" hreflang="zh-CN" href="zh/context.html">
+    <link rel="alternate" hreflang="x-default" href="context.html">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body class="context-note-page">
     <header class="candidate-nav">
-      <a class="mark" href="./" aria-label="Code as Runtime 首页"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
-      <nav class="series-nav" aria-label="Code as Runtime 系列文章">
-        <a href="./">01 Runtime</a>
-        <a class="active" href="context.html">02 Context</a>
-        <a href="training.html">03 Runtime RL</a>
-        <a href="data.html">04 Real-data SFT</a>
-      </nav>
+      <a class="mark" href="./" aria-label="Code as Runtime home"><b>Code as Runtime</b><span>Agent-written robot runtime</span></a>
+      <div class="nav-tools">
+        <nav class="series-nav" aria-label="Code as Runtime article series">
+          <a href="./">01 Runtime</a>
+          <a class="active" href="context.html">02 Context</a>
+          <a href="training.html">03 Runtime RL</a>
+          <a href="data.html">04 Real-data SFT</a>
+        </nav>
+        <a class="language-switch" href="zh/context.html" hreflang="zh-CN" lang="zh-CN" aria-label="Read in Chinese">中文</a>
+      </div>
     </header>
 
     <main class="candidate-shell">
       <header class="candidate-hero compact context-hero">
         <p class="eyebrow">Code as Runtime · Context note</p>
-        <h1>Code as Runtime 的主 Agent，<br>每轮获得什么上下文？</h1>
-        <p class="lead">这篇文章定义 Code as Runtime 的 wake-up context：主 Agent 每轮获得哪些输入、这些输入按什么顺序排列、哪些内容跨轮保持稳定，以及 latest image 为什么位于最后。上下文延续 ReAct 的 action–observation 交错轨迹<sup class="cite"><a href="references.html#ref-2">[2]</a></sup>与 CodeAct 的多轮执行反馈<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>，同时尽量复用多模态推理缓存。</p>
+        <h1>What context does the Code as Runtime<br>main Agent receive on each turn?</h1>
+        <p class="lead">This article defines the Code as Runtime wake-up context: what inputs the main Agent receives on every turn, how those inputs are ordered, what remains stable across turns, and why the latest image comes last. The context extends ReAct's interleaved action–observation trajectories<sup class="cite"><a href="references.html#ref-2">[2]</a></sup> and CodeAct's multi-turn execution feedback<sup class="cite"><a href="references.html#ref-3">[3]</a></sup>, while reusing as much multimodal inference cache as possible.</p>
       </header>
 
       <article class="context-article">
         <section class="context-design-section" aria-labelledby="context-order-heading">
           <header class="section-intro">
             <p class="eyebrow">01 · The exact wake-up context</p>
-            <h2 id="context-order-heading">上下文从稳定前缀开始，<br>沿变化速度向后展开。</h2>
-            <p>这里假设推理服务对多模态输入使用严格的 prefix cache；SGLang 的 RadixAttention 是这类跨请求 KV cache 复用的代表实现<sup class="cite"><a href="references.html#ref-7">[7]</a></sup>。只有从开头开始完全一致的 token 与图像内容才能复用；任何过早出现的时间戳、queue 余量或新图像，都会让它之后的内容失去缓存机会。目标服务是否缓存 image token，仍需用真实 cache hit 验证。</p>
+            <h2 id="context-order-heading">Context starts with a stable prefix,<br>then unfolds by rate of change.</h2>
+            <p>Assume the inference service uses a strict prefix cache for multimodal input; SGLang's RadixAttention is a representative implementation of cross-request KV-cache reuse<sup class="cite"><a href="references.html#ref-7">[7]</a></sup>. Only tokens and image content that match exactly from the beginning can be reused. A timestamp, queue remainder, or new image placed too early denies everything after it a cache opportunity. Whether the target service caches image tokens must still be verified with real cache-hit measurements.</p>
           </header>
 
           <figure class="cache-stack-figure">
-            <div class="cache-stack" role="img" aria-label="主 Agent 每轮上下文从稳定前缀到最新图像的排列">
+            <div class="cache-stack" role="img" aria-label="The main Agent's context ordered from stable prefix to latest image">
               <div class="cache-layer fixed-layer">
                 <span class="layer-index">00</span>
-                <div><small>EXACT PREFIX · CROSS-EPISODE</small><b>System policy</b><p>角色、方法边界、安全原则、决策 contract，以及 CONTINUE / EMIT / RUN_ANALYSIS / UPDATE_HANDLER 的输出语义。</p></div>
-                <em>最稳定</em>
+                <div><small>EXACT PREFIX · CROSS-EPISODE</small><b>System policy</b><p>Role, methodological boundaries, safety principles, the decision contract, and output semantics for CONTINUE / EMIT / RUN_ANALYSIS / UPDATE_HANDLER.</p></div>
+                <em>most stable</em>
               </div>
               <div class="cache-layer fixed-layer">
                 <span class="layer-index">01</span>
-                <div><small>EXACT PREFIX · VERSIONED</small><b>Primitive contracts + fixed helpers</b><p>机器人 primitive、Action Queue API、observation schema、helper 函数实现与输出格式。只在版本升级时整体变化。</p></div>
-                <em>高复用</em>
+                <div><small>EXACT PREFIX · VERSIONED</small><b>Primitive contracts + fixed helpers</b><p>Robot primitives, the Action Queue API, observation schema, helper implementations, and output formats. This block changes as a whole only on version upgrades.</p></div>
+                <em>high reuse</em>
               </div>
               <div class="cache-layer episode-layer">
                 <span class="layer-index">02</span>
-                <div><small>EPISODE PREFIX</small><b>Task, safety contract + stable scene facts</b><p>任务目标、禁止条件、机器人标定、相机角色，以及在 episode 内冻结的对象身份。</p></div>
-                <em>episode 内稳定</em>
+                <div><small>EPISODE PREFIX</small><b>Task, safety contract + stable scene facts</b><p>Task goal, prohibited conditions, robot calibration, camera roles, and object identities frozen within the episode.</p></div>
+                <em>stable in episode</em>
               </div>
               <div class="cache-layer history-layer">
                 <span class="layer-index">03</span>
-                <div><small>STICKY VISUAL HISTORY</small><b>Selected history images · oldest → newest</b><p>事件锚点与指数时间桶中的历史图像。旧槽位优先保持不动，使 cache 尽可能晚才出现第一个 miss。</p></div>
-                <em>缓慢变化</em>
+                <div><small>STICKY VISUAL HISTORY</small><b>Selected history images · oldest → newest</b><p>Historical images from event anchors and exponential time buckets. Older slots stay fixed whenever possible so that the first cache miss occurs as late as possible.</p></div>
+                <em>changes slowly</em>
               </div>
               <div class="cache-layer rolling-layer">
                 <span class="layer-index">04</span>
-                <div><small>EXECUTABLE SNAPSHOT</small><b>Active runtime + Action Queue + progress</b><p>当前代码、已安装 handlers、queue 的 executed prefix / remaining horizon、任务进度、对象 belief 与 last truncate。</p></div>
-                <em>每轮可能变化</em>
+                <div><small>EXECUTABLE SNAPSHOT</small><b>Active runtime + Action Queue + progress</b><p>Current code, installed handlers, the queue's executed prefix / remaining horizon, task progress, object beliefs, and the last truncation.</p></div>
+                <em>may change each turn</em>
               </div>
               <div class="cache-layer rolling-layer">
                 <span class="layer-index">05</span>
-                <div><small>RECENT DELTA</small><b>Decision summaries + tool / handler events</b><p>最近 2–4 次 decision、自检、工具输出、executor stdout、力或触觉异常，以及自上一轮以来发生了什么。</p></div>
-                <em>滚动窗口</em>
+                <div><small>RECENT DELTA</small><b>Decision summaries + tool / handler events</b><p>The latest 2–4 decisions, self-checks, tool outputs, executor stdout, force or tactile anomalies, and what changed since the previous turn.</p></div>
+                <em>rolling window</em>
               </div>
               <div class="cache-layer current-layer">
                 <span class="layer-index">06</span>
-                <div><small>CURRENT TURN</small><b>Latest sensor summary + decision request</b><p>当前时间对应的 proprioception、force、tactile 与精简变化摘要；决策指令在图像之前写完。</p></div>
-                <em>本轮新内容</em>
+                <div><small>CURRENT TURN</small><b>Latest sensor summary + decision request</b><p>Proprioception, force, tactile input, and a concise change summary for the current time. The decision instruction is complete before the image.</p></div>
+                <em>new this turn</em>
               </div>
               <div class="cache-layer latest-layer">
                 <span class="layer-index">07</span>
-                <div><small>LAST CONTENT BLOCK</small><b>Latest image</b><p>信息量最大、token 较多且几乎必然不同。所有 helper、状态和说明都排列在它之前。</p></div>
-                <em>不可复用的现在</em>
+                <div><small>LAST CONTENT BLOCK</small><b>Latest image</b><p>The highest-information, token-heavy block, and almost certainly different. Every helper, state block, and instruction appears before it.</p></div>
+                <em>the unreusable present</em>
               </div>
             </div>
-            <figcaption>排序遵循一个统一标准：越稳定越靠前，越容易变化越靠后。latest image 位于变化最快的一端。</figcaption>
+            <figcaption>The ordering follows one rule: the more stable a block is, the earlier it appears; the more likely it is to change, the later it appears. The latest image sits at the fastest-changing end.</figcaption>
           </figure>
         </section>
 
         <section class="context-design-section" aria-labelledby="cache-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">02 · Where the cache breaks</p>
-            <h2 id="cache-heading">缓存只复用一条<br>精确的公共前缀。</h2>
-            <p>Turn N+1 能复用多少，取决于它与 Turn N 从开头起保持一致到哪里。最早发生变化的位置决定了本轮 cache miss 的起点。</p>
+            <h2 id="cache-heading">The cache reuses only one<br>exact common prefix.</h2>
+            <p>How much Turn N+1 can reuse depends on how far it remains identical to Turn N from the beginning. The first changed position determines where the cache miss starts for this turn.</p>
           </header>
 
           <figure class="turn-cache-figure">
@@ -105,21 +111,21 @@
               <div class="turn-segment rolling-segment">runtime + trace′</div>
               <div class="turn-segment latest-segment">image N+1</div>
             </div>
-            <div class="cache-break"><span></span><b>first changed history slot</b><p>从 H₄ 开始重新计算；H₀–H₂ 之前的全部前缀仍可复用。</p></div>
-            <figcaption>因此历史图像应该按“最旧且最不容易变化”到“最新且最容易被替换”排列。把最新图像放到中间，会让它之后的 runtime state、trace 和 helpers 每轮一起失去缓存。</figcaption>
+            <div class="cache-break"><span></span><b>first changed history slot</b><p>Recomputation begins at H₄; the entire prefix through H₀–H₂ remains reusable.</p></div>
+            <figcaption>History images should therefore be ordered from the oldest and least likely to change to the newest and easiest to replace. Putting the latest image in the middle forces the runtime state, trace, and helpers after it to miss the cache on every turn.</figcaption>
           </figure>
         </section>
 
         <section class="context-design-section" aria-labelledby="history-heading">
           <header class="section-intro">
             <p class="eyebrow">03 · Sticky exponential history</p>
-            <h2 id="history-heading">指数衰减负责覆盖时间，<br>粘性槽位负责保住缓存。</h2>
-            <p>历史采样维护一组持久槽位：新帧只进入最近端；较老槽位在跨过时间桶边界或出现重要事件时替换。这样可以同时覆盖长时间跨度并保持公共前缀。</p>
+            <h2 id="history-heading">Exponential decay covers time.<br>Sticky slots preserve the cache.</h2>
+            <p>History sampling maintains a set of persistent slots. New frames enter only at the recent end; older slots are replaced only when crossing a time-bucket boundary or when an important event occurs. This covers a long time span while preserving the common prefix.</p>
           </header>
 
           <div class="history-layout">
             <figure class="history-rail-figure">
-              <div class="history-rail" aria-label="从过去到现在的粘性指数历史图像采样">
+              <div class="history-rail" aria-label="Sticky exponential history-image sampling from past to present">
                 <div class="history-frame anchor-frame"><span>t−64s</span><i></i><b>task start</b><small>event anchor</small></div>
                 <div class="history-frame"><span>t−32s</span><i></i><b>scene layout</b><small>sticky bucket</small></div>
                 <div class="history-frame"><span>t−16s</span><i></i><b>approach</b><small>sticky bucket</small></div>
@@ -128,14 +134,14 @@
                 <div class="history-frame"><span>t−2s</span><i></i><b>transport</b><small>recent slot</small></div>
                 <div class="history-frame"><span>t−1s</span><i></i><b>last review</b><small>recent slot</small></div>
               </div>
-              <figcaption>时间越近采样越密；接触、抓取、handler 安装和异常等事件可以额外固定为 anchor，不被普通时间采样挤掉。</figcaption>
+              <figcaption>Sampling grows denser toward the present. Events such as contact, grasp, handler installation, and anomalies can be pinned as additional anchors instead of being displaced by ordinary time sampling.</figcaption>
             </figure>
 
             <div class="history-rules">
-              <div><span>01</span><p><b>旧到新排列</b>相同的旧图像形成最长公共前缀；最近槽位的轮换只影响 suffix。</p></div>
-              <div><span>02</span><p><b>槽位按事件更新</b>时间桶跨界、anchor 触发或预算压缩时，才替换对应 image id。</p></div>
-              <div><span>03</span><p><b>图像与说明一起冻结</b>timestamp、camera id、caption 与 image 必须作为一个不可变单元，否则文字变化同样会击穿 cache。</p></div>
-              <div><span>04</span><p><b>按信息增益淘汰</b>先删除与邻近帧重复的普通图像，保留动作转折、接触和失败证据。</p></div>
+              <div><span>01</span><p><b>Order oldest to newest</b>Identical old images form the longest common prefix; rotation in recent slots affects only the suffix.</p></div>
+              <div><span>02</span><p><b>Update slots on events</b>Replace an image id only when a time bucket rolls over, an anchor triggers, or the budget is compressed.</p></div>
+              <div><span>03</span><p><b>Freeze image and description together</b>Timestamp, camera id, caption, and image must be one immutable unit; changing text can break the cache just as easily.</p></div>
+              <div><span>04</span><p><b>Evict by information gain</b>Remove ordinary images that duplicate neighboring frames first; retain action transitions, contact, and evidence of failure.</p></div>
             </div>
           </div>
         </section>
@@ -143,8 +149,8 @@
         <section class="context-design-section" aria-labelledby="assembly-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">04 · One assembled turn</p>
-            <h2 id="assembly-heading">抓住香蕉之后，<br>这一轮上下文长什么样？</h2>
-            <p>下面展示序列化后的逻辑结构；具体实现可以映射到不同消息格式。决策请求在 latest image 之前完成，使图像成为输入的最后一个 content block。</p>
+            <h2 id="assembly-heading">After grasping the banana,<br>what does this turn's context look like?</h2>
+            <p>The following shows the serialized logical structure; an implementation can map it to different message formats. The decision request is completed before the latest image, making that image the final content block in the input.</p>
           </header>
 
           <div class="assembly-grid">
@@ -181,10 +187,10 @@ Decide whether to keep, emit action, or update runtime.
 [LATEST_IMAGE img:f_183 wrist-camera]</code></pre>
 
             <aside class="assembly-notes">
-              <p><small>CACHE HIT</small><b>System → helpers → episode</b><span>跨轮保持字节级稳定；helper 的版本号变化时主动开始新的 cache lineage。</span></p>
-              <p><small>PARTIAL HIT</small><b>Visual history</b><span>前三个 image unit 没变；只有最近 holding 槽位可能触发新的 suffix。</span></p>
-              <p><small>FRESH TOKENS</small><b>Runtime → latest image</b><span>queue、事件和最新图像属于本轮状态，默认需要重新编码。</span></p>
-              <p><small>EXPECTED OUTPUT</small><b>UPDATE_HANDLER</b><span>Agent 安装 TAP drop guard；下一轮 context 会在 runtime snapshot 中看到 handler 版本与 stdout。</span></p>
+              <p><small>CACHE HIT</small><b>System → helpers → episode</b><span>Stays byte-for-byte stable across turns; a helper version change deliberately starts a new cache lineage.</span></p>
+              <p><small>PARTIAL HIT</small><b>Visual history</b><span>The first three image units are unchanged; only the latest holding slot may trigger a new suffix.</span></p>
+              <p><small>FRESH TOKENS</small><b>Runtime → latest image</b><span>The queue, events, and latest image belong to the current turn and normally require re-encoding.</span></p>
+              <p><small>EXPECTED OUTPUT</small><b>UPDATE_HANDLER</b><span>The Agent installs a TAP drop guard; the next context sees the handler version and stdout in the runtime snapshot.</span></p>
             </aside>
           </div>
         </section>
@@ -192,12 +198,12 @@ Decide whether to keep, emit action, or update runtime.
         <section class="context-design-section" aria-labelledby="budget-heading">
           <header class="section-intro">
             <p class="eyebrow">05 · An illustrative 64k budget</p>
-            <h2 id="budget-heading">优先保护可执行状态，<br>再给历史内容弹性空间。</h2>
-            <p>下列比例仅是一套起始配置。图像 token 数取决于视觉编码器、分辨率和 tiling；上线前必须在真实 processor 之后计数，并根据 cache hit、任务长度和失败类型调整。</p>
+            <h2 id="budget-heading">Protect executable state first,<br>then give history flexible capacity.</h2>
+            <p>These proportions are only a starting configuration. Image-token counts depend on the vision encoder, resolution, and tiling. Before deployment, count them after the real processor and adjust for cache hits, task length, and failure modes.</p>
           </header>
 
           <figure class="budget-figure">
-            <div class="budget-bar" aria-label="64k context 的示例 token 比例">
+            <div class="budget-bar" aria-label="Illustrative token shares in a 64k context">
               <span class="budget-system" style="--share:5"><b>5%</b><small>system</small></span>
               <span class="budget-helpers" style="--share:12"><b>12%</b><small>helpers</small></span>
               <span class="budget-episode" style="--share:4"><b>4%</b><small>task</small></span>
@@ -209,31 +215,31 @@ Decide whether to keep, emit action, or update runtime.
             </div>
 
             <div class="budget-ledger">
-              <div><b>5%</b><span>System + output contract</span><small>约 3.2k · 固定保留</small></div>
-              <div><b>12%</b><span>Primitives + fixed helpers</span><small>约 7.7k · 固定保留</small></div>
-              <div><b>4%</b><span>Episode contract</span><small>约 2.6k · episode 内固定</small></div>
-              <div><b>38%</b><span>Selected history images</span><small>约 24.3k · 最大弹性区</small></div>
-              <div><b>14%</b><span>Runtime + Action Queue</span><small>约 9.0k · 设置最低保障</small></div>
-              <div><b>10%</b><span>Recent trace + events</span><small>约 6.4k · 限制为最近 2–4 轮</small></div>
-              <div><b>3%</b><span>Current sensor summary</span><small>约 1.9k · 只写变化</small></div>
-              <div><b>14%</b><span>Latest image</span><small>约 9.0k · 始终位于末端</small></div>
+              <div><b>5%</b><span>System + output contract</span><small>≈ 3.2k · always retained</small></div>
+              <div><b>12%</b><span>Primitives + fixed helpers</span><small>≈ 7.7k · always retained</small></div>
+              <div><b>4%</b><span>Episode contract</span><small>≈ 2.6k · fixed within episode</small></div>
+              <div><b>38%</b><span>Selected history images</span><small>≈ 24.3k · largest flexible region</small></div>
+              <div><b>14%</b><span>Runtime + Action Queue</span><small>≈ 9.0k · guaranteed minimum</small></div>
+              <div><b>10%</b><span>Recent trace + events</span><small>≈ 6.4k · limited to latest 2–4 turns</small></div>
+              <div><b>3%</b><span>Current sensor summary</span><small>≈ 1.9k · changes only</small></div>
+              <div><b>14%</b><span>Latest image</span><small>≈ 9.0k · always at the end</small></div>
             </div>
-            <figcaption>固定前缀约占 17%，episode 前缀约占 4%，历史视觉是主要弹性预算；runtime state 与 latest observation 则必须保留足够空间，避免只记得过去却无法继续执行。</figcaption>
+            <figcaption>The fixed prefix occupies about 17%, the episode prefix about 4%, and visual history is the main flexible budget. Runtime state and the latest observation still need protected capacity so that the Agent can continue executing instead of merely remembering the past.</figcaption>
           </figure>
         </section>
 
         <section class="context-design-section context-contract" aria-labelledby="contract-heading">
           <header class="section-intro narrow">
             <p class="eyebrow">06 · Context builder contract</p>
-            <h2 id="contract-heading">真正需要实现的，<br>是确定性的 context builder。</h2>
-            <p>缓存收益最终取决于序列化是否稳定。相同状态必须生成相同前缀；预算不足时也要使用明确、可回放的淘汰顺序。</p>
+            <h2 id="contract-heading">What must be implemented<br>is a deterministic context builder.</h2>
+            <p>Cache gains ultimately depend on stable serialization. The same state must produce the same prefix, and budget pressure must follow an explicit, replayable eviction order.</p>
           </header>
           <div class="contract-list">
-            <p><b>当前时间归入 current turn。</b><span>时间戳、request id 和动态统计统一排列在 system / helper 区之后。</span></p>
-            <p><b>所有集合稳定排序。</b><span>primitive、handler、对象 belief 和 tool result 使用确定 key；禁止依赖 map 的偶然遍历顺序。</span></p>
-            <p><b>history 使用不可变 image unit。</b><span>image id、caption、camera 与时间一旦进入槽位就一起冻结，直到该槽位被明确替换。</span></p>
-            <p><b>超预算时按价值淘汰。</b><span>先压缩重复 stdout 与普通帧，再缩短 decision trace；固定保留 safety contract、active code、queue state 和 latest image。</span></p>
-            <p><b>记录 cache lineage。</b><span>每轮 trace 保存 prefix version、首个变化 block、实际 token 占比与 cache hit，才能验证这套设计是否真的节省推理。</span></p>
+            <p><b>Current time belongs to the current turn.</b><span>Place timestamps, request ids, and dynamic statistics together after the system / helper region.</span></p>
+            <p><b>Sort every collection stably.</b><span>Use deterministic keys for primitives, handlers, object beliefs, and tool results; never depend on incidental map iteration order.</span></p>
+            <p><b>History uses immutable image units.</b><span>Once an image id, caption, camera, and time enter a slot, freeze them together until that slot is explicitly replaced.</span></p>
+            <p><b>Evict by value when over budget.</b><span>Compress repetitive stdout and ordinary frames first, then shorten the decision trace. Always retain the safety contract, active code, queue state, and latest image.</span></p>
+            <p><b>Record the cache lineage.</b><span>Save the prefix version, first changed block, actual token share, and cache hit in every trace so the inference savings can be measured.</span></p>
           </div>
           <pre class="prompt-example builder-example"><code>def build_agent_context(snapshot, episode, budget):
     blocks = [
@@ -261,7 +267,7 @@ Decide whether to keep, emit action, or update runtime.
     return blocks</code></pre>
         </section>
       </article>
-      <p class="article-references-link">本篇的 cache 排序与 sticky visual history 是本文提出的系统设计，不应理解为上述工作已经验证的机器人上下文最优解。<a href="references.html">查看完整参考文献 →</a></p>
+      <p class="article-references-link">The cache ordering and sticky visual history described here are system-design proposals from this article; they should not be read as a context optimum already established by the cited work. <a href="references.html">View all references →</a></p>
     </main>
   </body>
 </html>

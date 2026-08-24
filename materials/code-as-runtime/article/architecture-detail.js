@@ -5,15 +5,15 @@ class ArchitectureDetail extends HTMLElement {
       <section class="architecture-block detail-${variant}" aria-labelledby="architecture-heading">
         <header class="section-intro">
           <p class="eyebrow">01 · What Code as Runtime means</p>
-          <h2 id="architecture-heading">Agent 间歇更新，<br>运行时持续执行。</h2>
-          <p>主 Agent 以自身的决策节奏维护控制如何继续运行。每轮可以执行 action-building code、安装或修改 handler，或者确认现有 runtime 继续有效。handler 是 Agent 写入 runtime、按所选频率或事件触发的普通代码。两条执行路径最终维护同一个 Action Queue。</p>
+          <h2 id="architecture-heading">The Agent updates intermittently.<br>The runtime executes continuously.</h2>
+          <p>The main Agent maintains how control should continue at its own decision cadence. On each turn it can execute action-building code, install or modify a handler, or confirm that the current runtime remains valid. A handler is ordinary code written into the runtime by the Agent and triggered at a chosen frequency or by an event. Both execution paths ultimately maintain the same Action Queue.</p>
         </header>
 
         <figure class="module-figure circuit-figure-v2">
           <img class="module-wash" src="assets/nervous-system-v1.png" alt="">
           <svg viewBox="0 0 1440 660" role="img" aria-labelledby="circuit-title circuit-desc">
-            <title id="circuit-title">一个主 Agent 写出 Action-building code 和 fast-handler code</title>
-            <desc id="circuit-desc">稀疏关键 observation 进入主 Agent；香蕉示例约为一赫兹。Agent 写出两类代码：一类构建正常 Action Chunk，另一类安装在 runtime 中并按任务所需频率或事件运行。handler 处理两次 Agent 决策之间尚未进入模型上下文的输入，并与 Action-building code 共同维护 Action Queue。</desc>
+            <title id="circuit-title">One main Agent writes action-building code and fast-handler code</title>
+            <desc id="circuit-desc">Sparse key observations enter the main Agent; the banana example runs at about one hertz. The Agent writes two kinds of code: one constructs normal Action Chunks, while the other is installed in the runtime and runs at the frequency or event cadence the task requires. The handler processes inputs that have not yet entered model context between Agent decisions, and maintains the Action Queue together with action-building code.</desc>
             <defs>
               <filter id="circuit-soft-${variant}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="25"/></filter>
               <marker id="circuit-arrow-main-${variant}" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d45a43"/></marker>
@@ -110,12 +110,12 @@ class ArchitectureDetail extends HTMLElement {
           </svg>
 
           <div class="module-mobile-summary circuit-mobile-summary">
-            <p><b>1 · Main Agent</b><span>按决策节奏读取最新 observation、历史摘要、queue 状态与 handler stdout；香蕉示例约 1Hz。它是 runtime 的唯一代码作者。</span></p>
-            <p><b>2 · Action-building code</b><span>被执行来构建正常的 approach、grasp、transport、release Action Chunk，并写入共享 queue。</span></p>
-            <p><b>3 · Fast-handler code</b><span>由同一个 Agent 写出并安装，按响应需求选择频率或事件触发；香蕉示例使用 20Hz+。</span></p>
-            <p><b>4 · Shared Action Queue</b><span>两类代码都能 clear、truncate、overwrite 或 push；机器人只持续消费这一条 queue。</span></p>
+            <p><b>1 · Main Agent</b><span>Reads the latest observation, history summary, queue state, and handler stdout at the decision cadence—about 1 Hz in the banana example. It is the runtime's sole code author.</span></p>
+            <p><b>2 · Action-building code</b><span>Runs to construct normal approach, grasp, transport, and release Action Chunks, then writes them into the shared queue.</span></p>
+            <p><b>3 · Fast-handler code</b><span>Written and installed by the same Agent, then triggered at the frequency or event cadence required for the response—20 Hz or faster in the banana example.</span></p>
+            <p><b>4 · Shared Action Queue</b><span>Both kinds of code can clear, truncate, overwrite, or push. The robot continuously consumes this one queue.</span></p>
           </div>
-          <figcaption>handler 路径由主 Agent 安装在 runtime 中：它在两次模型决策之间继续处理输入、必要时修改 queue，并把事件结果带回下一轮上下文。</figcaption>
+          <figcaption>The handler path is installed in the runtime by the main Agent. It continues to process inputs between model decisions, modifies the queue when necessary, and returns event results to the next context.</figcaption>
         </figure>
 
       </section>
@@ -123,88 +123,88 @@ class ArchitectureDetail extends HTMLElement {
       <section class="context-block" aria-labelledby="context-heading">
         <header class="section-intro narrow">
           <p class="eyebrow">02 · What persists</p>
-          <h2 id="context-heading">上下文描述的，<br>是 runtime 的可执行状态。</h2>
-          <p>每轮只加入最新 observation 与本轮变化，并保留足以继续执行的关键状态：任务约束、少量关键帧、queue 余量、active code、handler 事件和最近决策。Agent 因而能判断现有 runtime 是否仍然有效，以及下一步应该保持、补写还是替换它。</p>
+          <h2 id="context-heading">Context describes<br>the runtime's executable state.</h2>
+          <p>Each turn adds only the latest observation and the changes from this turn, while retaining enough key state to continue execution: task constraints, a few keyframes, queue capacity, active code, handler events, and recent decisions. The Agent can therefore decide whether the current runtime remains valid and whether to preserve, extend, or replace it next.</p>
         </header>
-        <div class="context-river" role="img" aria-label="贯穿香蕉任务的 Agent 长上下文组成">
+        <div class="context-river" role="img" aria-label="Components of the Agent's long context throughout the banana task">
           <div class="context-anchor"><small>PINNED</small><b>Task + safety contract</b><span>Pick the banana and place it in the bowl.</span></div>
-          <div><small>VISUAL</small><b>Latest + selected history</b><span>当前多相机帧；必要时保留最近 after-frame。</span></div>
-          <div><small>STATE</small><b>Runtime progress + Action Queue</b><span>executed prefix、remaining horizon、last truncate。</span></div>
-          <div><small>CODE</small><b>Installed code + tool outputs</b><span>SAM 3 / fusion 输出与 TAP guard 版本。</span></div>
-          <div><small>TRACE</small><b>Recent runtime decisions</b><span>最近 2–4 次 decision、reason 与 self-check。</span></div>
+          <div><small>VISUAL</small><b>Latest + selected history</b><span>Current multi-camera frames; retain the latest after-frame when needed.</span></div>
+          <div><small>STATE</small><b>Runtime progress + Action Queue</b><span>Executed prefix, remaining horizon, and last truncation.</span></div>
+          <div><small>CODE</small><b>Installed code + tool outputs</b><span>SAM 3 / fusion outputs and the TAP guard version.</span></div>
+          <div><small>TRACE</small><b>Recent runtime decisions</b><span>The latest 2–4 decisions, reasons, and self-checks.</span></div>
         </div>
       </section>
 
       <section class="episode-block" aria-labelledby="episode-heading">
         <header class="section-intro">
           <p class="eyebrow">03 · Banana to bowl · runtime evolution</p>
-          <h2 id="episode-heading">每轮决策都能改写 runtime；<br>没有必要时就保持它。</h2>
-          <p>下面用一条任务 trace 展示同一套 runtime 的演化过程。阶段名称是事后阅读标签；在线执行时，Agent 根据当前上下文选择保持现状、运行分析代码、构建新动作，或更新 handler。文中的 rationale 只表示可观察的决策摘要，与模型的隐藏思维链无关。</p>
+          <h2 id="episode-heading">Every decision can rewrite the runtime.<br>When no change is needed, preserve it.</h2>
+          <p>The trace below shows how one runtime evolves through a task. Stage names are retrospective reading labels; during online execution, the Agent uses current context to preserve the runtime, run analysis code, construct a new action, or update a handler. The rationale shown here is only an observable decision summary, not the model's hidden chain of thought.</p>
         </header>
 
         <div class="episode-track">
           ${this.stage({
             number: '00', time: 't = 0.0s', title: 'Approach start', decision: 'RUN_ANALYSIS + EMIT',
-            observation: 'Front / wrist camera 看见香蕉与碗；queue 为空；gripper 打开；无接触。',
-            thought: '先把语义 mask 变成可执行几何。香蕉 pose 稳定且直线路径无碰撞，可以一次发射覆盖数秒的 approach，避免逐帧生成动作。',
+            observation: 'The front and wrist cameras see the banana and bowl; the queue is empty; the gripper is open; there is no contact.',
+            thought: 'First convert the semantic masks into executable geometry. The banana pose is stable and the straight-line path is collision-free, so one emission can cover several seconds of approach instead of generating actions frame by frame.',
             code: `banana = sam3.segment(front, "banana")\nbowl = sam3.segment(front, "bowl")\nT_banana = fuse_pose(front, wrist, banana)\nchunk = approach(T_banana, stop=0.08, horizon=3.0)\nqueue.replace(chunk)`,
-            queue: '写入约 3 秒 approach Chunk；robot 立即开始消费。',
-            check: 'mask confidence ≥ 0.84 · workspace clear · endpoint 距香蕉 8cm · queue horizon 3.0s',
-            next: '下一次主 Agent 决策到来前，已安装的 runtime 持续记录 tracker、关节与力。'
+            queue: 'Writes an approach Chunk of about three seconds; the robot starts consuming it immediately.',
+            check: 'mask confidence ≥ 0.84 · workspace clear · endpoint 8 cm from banana · queue horizon 3.0 s',
+            next: 'Until the next main-Agent decision, the installed runtime keeps recording tracker, joint, and force data.'
           })}
           ${this.stage({
             number: '01', time: 't ≈ 1.0s', title: 'Approach review 1', decision: 'CONTINUE',
-            observation: '新图像与预测轨迹一致；末端距香蕉约 21cm；queue remaining 约 2.1s；无力异常。',
-            thought: '当前 chunk 仍把夹爪送向正确的 pre-grasp pose。剩余动作足够覆盖到下一轮审查，没有理由制造新的 chunk。',
+            observation: 'The new image matches the predicted trajectory; the end effector is about 21 cm from the banana; queue remaining is about 2.1 s; force is normal.',
+            thought: 'The current chunk is still moving the gripper toward the correct pre-grasp pose. The remaining actions cover the next review, so there is no reason to create a new chunk.',
             code: `return CONTINUE(\n  reason="tracking stable; queue horizon sufficient",\n  queue_mutation=None\n)`,
-            queue: '显式 no-op；原 approach Chunk 连续执行，不 append、不 replace。',
-            check: 'pose error 1.4cm < 3cm · queue remaining 2.1s > review interval · contact=false',
-            next: '把 CONTINUE 与自检摘要写入 trace；一秒后继续审查。'
+            queue: 'An explicit no-op: the original approach Chunk continues without append or replace.',
+            check: 'pose error 1.4 cm < 3 cm · queue remaining 2.1 s > review interval · contact=false',
+            next: 'Writes CONTINUE and the self-check summary to the trace; reviews again one second later.'
           })}
           ${this.stage({
             number: '02', time: 't ≈ 2.0s', title: 'Approach review 2', decision: 'CONTINUE',
-            observation: '夹爪继续靠近；香蕉跟踪稳定；queue remaining 约 1.2s，仍能覆盖到下一决策点。',
-            thought: '距离在缩短，但尚未进入需要近距离 grasp 的范围。继续原 chunk 比提前改写 queue 更平滑。',
+            observation: 'The gripper keeps approaching; banana tracking remains stable; queue remaining is about 1.2 s, enough to reach the next decision point.',
+            thought: 'The distance is shrinking, but the gripper has not entered near-grasp range. Continuing the original chunk is smoother than rewriting the queue early.',
             code: `return CONTINUE(\n  reason="approach remains valid",\n  expected_next="near-grasp review",\n  queue_mutation=None\n)`,
-            queue: '第二次保持不变；同一个 approach Chunk 跨越三个 Agent 决策周期。',
-            check: 'pose error 1.1cm · no occlusion · no contact · remaining horizon 仍充分',
-            next: '保存“下一轮重点检查 grasp range”的摘要；在线 runtime 仍按 observation 推进。'
+            queue: 'Leaves the queue unchanged a second time; the same approach Chunk spans three Agent decision cycles.',
+            check: 'pose error 1.1 cm · no occlusion · no contact · remaining horizon sufficient',
+            next: 'Saves a summary to check grasp range on the next turn; the online runtime continues advancing with observations.'
           })}
           ${this.stage({
             number: '03', time: 't ≈ 2.8s', title: 'Near banana', decision: 'EMIT GRASP',
-            observation: '最新图像显示夹爪进入抓取范围；距离约 6.5cm；approach 尾部若继续执行会越过新的 pre-grasp。',
-            thought: '当前 observation 表明原动作已经失效。冻结当前推理延迟期间必须执行的短前缀，截掉 approach 尾部，用近距离视觉和力基线生成 grasp。',
+            observation: 'The latest image shows the gripper entering grasp range at about 6.5 cm; continuing the approach tail would overshoot the new pre-grasp.',
+            thought: 'The current observation shows that the original action is no longer valid. Freeze the short prefix that must execute during inference latency, remove the approach tail, and generate a grasp from close-range vision and the force baseline.',
             code: `T_grasp = refine_grasp(wrist, T_banana)\nprefix = queue.freeze_inflight(steps=4)\ngrasp = grasp_chunk(T_grasp, force_limit=12.0)\nqueue.replace_tail(prefix, grasp)`,
-            queue: '保留正在执行的 4 步前缀；替换未执行尾部；grasp 来自主 Agent。',
+            queue: 'Preserves the four in-flight prefix steps and replaces the unexecuted tail; the grasp comes from the main Agent.',
             check: 'grasp pose reachable · gripper aperture valid · force baseline clean · blend jerk within limit',
-            next: '夹爪闭合后，新 observation 与 force result 进入下一轮 Agent 决策。'
+            next: 'After the gripper closes, the new observation and force result enter the next Agent decision.'
           })}
           ${this.stage({
             number: '04', time: 't ≈ 3.6s', title: 'Holding + install guard', decision: 'UPDATE_HANDLER',
-            observation: 'gripper 已闭合；力信号符合持物；手部相机中香蕉与夹爪暂时相对稳定。',
-            thought: '正常 transport 可以等下一轮主 Agent 生成，但掉落风险可能在此前变化。因此把 TAP guard 作为持续存在的事件 handler 安装进 runtime；它的触发条件、阈值和 queue 修改行为都由本轮代码明确给出。',
+            observation: 'The gripper has closed; force indicates a held object; the banana and gripper are temporarily stable relative to each other in the wrist camera.',
+            thought: "Normal transport can wait for the main Agent's next turn, but drop risk may change before then. Install the TAP guard as a persistent event handler in the runtime; this turn's code explicitly defines its trigger, thresholds, and queue mutations.",
             code: `@on_frame(rate=20)\ndef tap_drop_guard(obs, queue):\n    rel = tap.relative_motion(obs.wrist, "banana", "gripper")\n    if rel.slip > 0.018 or obs.force.spike:\n        queue.clear(reason="drop-risk")\n        queue.push(stabilize_or_retract(obs))`,
-            queue: '本轮不生成正常 transport；只更新 active runtime。handler 保留修改 queue 和生成快速 Action Chunk 的完整能力。',
+            queue: 'Does not generate normal transport this turn; only updates the active runtime. The handler retains full authority to modify the queue and generate a fast Action Chunk.',
             check: 'grasp force in band · TAP lock acquired · relative motion stable for N frames',
-            next: 'guard 安装结果和最近 TAP 统计进入长上下文；主 Agent 准备 transport。'
+            next: 'The guard installation result and recent TAP statistics enter long context; the main Agent prepares transport.'
           }, true)}
           ${this.stage({
             number: '05', time: 't ≈ 4.2–7.0s', title: 'Transport', decision: 'EMIT → CONTINUE',
-            observation: '香蕉稳定在夹爪中；多相机融合得到碗口 pose；TAP guard active；queue 需要新任务动作。',
-            thought: '路径可安全跨越桌面，发射 move-to-bowl Chunk。之后每轮决策检查香蕉是否仍在手中、轨迹是否有效、queue 是否足够；条件不变时只返回 CONTINUE，让现有 runtime 继续。',
+            observation: 'The banana is stable in the gripper; multi-camera fusion provides the bowl pose; the TAP guard is active; the queue needs a new task action.',
+            thought: 'The path can cross the table safely, so emit a move-to-bowl Chunk. On later turns, check whether the banana remains held, the trajectory remains valid, and the queue is sufficient; when conditions are unchanged, return CONTINUE and let the runtime proceed.',
             code: `T_bowl = fuse_pose(front, wrist, bowl)\ntransport = move_to_bowl(T_bowl, clearance=0.14)\nqueue.append(transport)\n\n# later reviews\nif held and path_valid and queue.remaining > 1.0:\n    return CONTINUE(queue_mutation=None)`,
-            queue: '主 Agent 发射 transport；后续一个或多个 CONTINUE 保持其连续。TAP 只在异常时抢占。',
-            check: 'banana held · bowl confidence stable · clearance > 10cm · queue horizon 足够',
-            next: '进入碗上方 release volume 后，最新 observation 触发安全释放审查。'
+            queue: 'The main Agent emits transport; one or more later CONTINUE decisions preserve its continuity. TAP preempts only on an anomaly.',
+            check: 'banana held · bowl confidence stable · clearance > 10 cm · queue horizon sufficient',
+            next: 'After entering the release volume above the bowl, the latest observation triggers a safe-release review.'
           })}
           ${this.stage({
             number: '06', time: 't ≈ 7.4s', title: 'Release + verify', decision: 'RUN_ANALYSIS + EMIT',
-            observation: '夹爪位于碗上方；香蕉仍被 TAP 跟踪；末端速度低；碗口 mask 与深度一致。',
-            thought: '必须同时满足位置、持物与动态安全条件才能释放。确认后生成短 release Chunk；执行后等待新 observation，再判断香蕉是否进入碗。',
+            observation: 'The gripper is above the bowl; TAP still tracks the banana; end-effector speed is low; the bowl mask agrees with depth.',
+            thought: 'Release requires position, hold state, and dynamic-safety conditions to hold simultaneously. Once confirmed, generate a short release Chunk; after execution, wait for a new observation before deciding whether the banana is in the bowl.',
             code: `safe = inside_release_volume(ee, bowl) \\\n    and tap.is_held("banana") and ee.speed < 0.03\nassert safe\nqueue.replace_tail(release_chunk(open_to=0.085))\n\n# next observation\nsuccess = banana_in_bowl(front) and gripper.is_open`,
-            queue: '截去 transport 的剩余尾部，写入 release；robot 消费后等待 after-observation。',
+            queue: 'Truncates the remaining transport tail and writes release; after the robot consumes it, waits for an after-observation.',
             check: 'inside bowl volume · low velocity · no slip · release executed · banana mask remains in bowl',
-            next: '只有 after-observation 通过，episode 才写 terminal.success=true；否则重新分析与恢复。'
+            next: 'Only if the after-observation passes does the episode write terminal.success=true; otherwise it reanalyzes and recovers.'
           })}
         </div>
       </section>
