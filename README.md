@@ -2,6 +2,8 @@
 
 这个仓库同时保存 Robotics CAP 文章的写作过程与公开页面。当前 GitHub Pages 只发布 **Code as Runtime**：
 
+在线阅读：[English](https://carzy-hash.github.io/robotics-cap/) · [中文](https://carzy-hash.github.io/robotics-cap/zh/)
+
 1. `work/<article-id>/`：问题定义、提纲、证据边界、未决问题和迭代记录。
 2. `candidates/<article-id>/` 与 `reviews/<article-id>/`：候选稿、多视角评审和选择决策。
 3. `materials/code-as-runtime/article/`：当前唯一公开发布面。
