@@ -61,3 +61,32 @@ git push origin main
 ```
 
 `publish.sh` 只做发布前验证，不会自动暂存、提交或推送。
+
+## Pre-commit checks
+
+Install once in each clone using an isolated Python environment (Python 3.9+):
+
+```sh
+python3 -m venv .venv-hooks
+.venv-hooks/bin/python -m pip install -r requirements-pre-commit.txt
+.venv-hooks/bin/python -m pre_commit install --install-hooks
+```
+
+Use a Python version that supports the source syntax in this repository. The hook
+checks staged files for merge markers, case-conflicting filenames, and Python,
+JSON, TOML and YAML syntax. YAML checks allow custom tags and multiple documents.
+Checks parse files without importing project code or starting project services.
+They do not format files, run models, access hardware or require business dependencies.
+
+Run the same checks manually:
+
+```sh
+.venv-hooks/bin/python -m pre_commit run
+.venv-hooks/bin/python -m pre_commit run --all-files
+```
+
+Git does not install hooks when cloning or pulling. Repeat the installation in
+new clones; an existing `core.hooksPath` must be integrated explicitly rather than
+overwritten. The hook implementation and runner versions are pinned in
+[the configuration](.pre-commit-config.yaml) and
+[the tooling requirements](requirements-pre-commit.txt).

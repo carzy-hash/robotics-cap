@@ -23,3 +23,6 @@ rendered/
 .vscode/
 *.swp
 *~
+
+# Isolated tooling for repository commit checks.
+.venv-hooks/
